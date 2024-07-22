@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "@laihoe/demoparser2": "^0.2.1",
+    "async": "^3.2.4",
+    "bytebuffer": "^5.0.1",
+    "long": "^5.2.3",
+    "protobufjs": "^7.2.4",
+    "snappy": "^7.2.2",
+    "ts-proto": "^1.181.1",
+    "varint": "^6.0.0"
+  },
+  "scripts": {
+    "start": "npx tsc && node dist/index.js"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.6",
+    "@types/node": "^20.4.2",
+    "@types/varint": "^6.0.1"
+  }
+}
