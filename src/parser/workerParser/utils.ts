@@ -225,7 +225,7 @@ export const decodeQfloat = (reader: BitBuffer, qfIndex: number) => {
 
 const b = new ArrayBuffer(2 ** 18);
 const PACKET_TEMP_BUFFER = new Uint8Array(b); // Buffer.allocUnsafe(50_000);
-const c = new ArrayBuffer(2 ** 18);
+// const c = new ArrayBuffer(2 ** 18);
 // const PACKET_TEMP_BUFFER_2 = new Uint8Array(c); // Buffer.allocUnsafe(50_000);
 const entity_allocator = createAllocator();
 
