@@ -1,0 +1,184 @@
+[12295] makazze (makazze) (91hp) killed apEX with usp_silencer (HS) from 433,1967,136 at 18,836,80
+[13624] flameZ (flameZ) (52hp) killed Aleksib with glock (HS) from 2365,981,162 at 2541,1327,160
+[13742] mezii (mezii) (100hp) killed w0nderful with glock from 1870,1049,158 at 1786,1678,160
+[13894] b1t (b1t) (90hp) killed flameZ with usp_silencer (HS) from 1915,-208,260 at 2362,589,158
+[14070] iM (iM) (89hp) killed ropz with usp_silencer (HS) from 1461,1008,154 at 1365,202,130
+[14141] ZywOo (ZywOo) (98hp) killed b1t with glock (HS) from 2309,200,122 at 1863,-274,261
+[15226] ZywOo (ZywOo) (98hp) killed makazze with glock (HS) from 2146,300,160 at 2418,1133,175
+[15295] ZywOo (ZywOo) (98hp) killed iM with glock (HS) from 2093,331,160 at 1905,68,127
+[21753] iM (iM) (60hp) killed flameZ with mp9 from 1303,1212,181 at 1503,1144,167
+[21836] mezii (mezii) (38hp) killed w0nderful with galilar (HS) from 1464,425,129 at 1485,-84,132
+[21907] b1t (b1t) (100hp) killed mezii with deagle from 1503,-89,139 at 1477,369,128
+[21994] iM (iM) (56hp) killed ZywOo with mp9 from 1498,1215,177 at 1332,642,130
+[22033] ropz (ropz) (100hp) killed Aleksib with galilar from 1283,311,130 at 1679,-77,142
+[22224] ropz (ropz) (8hp) killed b1t with galilar from 1278,336,130 at 1534,-55,137
+[22653] apEX (apEX) (32hp) killed iM with galilar from 2404,147,132 at 2013,517,160
+[24433] makazze (makazze) (100hp) killed apEX with mac10 from 2095,154,160 at 2149,-342,98
+[24848] makazze (makazze) (9hp) killed ropz with mac10 from 2158,219,276 at 1829,296,161
+[29001] makazze (makazze) (37hp) killed ZywOo with m4a1_silencer from 296,1851,143 at 163,1365,100
+[30793] Aleksib (Aleksib) (51hp) killed mezii with galilar from 956,2777,133 at 671,2110,139
+[31067] makazze (makazze) (37hp) killed flameZ with m4a1_silencer from 2,3024,161 at 841,2512,140
+[31164] ropz (ropz) (98hp) killed makazze with galilar from 864,2536,140 at 19,2991,161
+[31619] iM (iM) (100hp) killed apEX with m4a1_silencer from 1101,2653,245 at 123,2865,162
+[32561] ropz (ropz) (6hp) killed b1t with galilar (HS) from 92,3061,161 at 1039,2676,136
+[32598] w0nderful (w0nderful) (55hp) killed ropz with m4a1 (HS) from 1116,2676,132 at 94,3066,161
+[41426] makazze (makazze) (100hp) killed flameZ with m4a1_silencer from 2,2545,161 at 798,2643,136
+[41575] Aleksib (Aleksib) (100hp) killed mezii with inferno from 1174,2742,124 at 663,2603,146
+[41601] ZywOo (ZywOo) (62hp) killed makazze with ak47 (HS) from 577,2450,279 at 9,2510,161
+[41675] ZywOo (ZywOo) (32hp) killed Aleksib with ak47 (HS) from 546,2460,279 at 1189,2823,129
+[41798] iM (iM) (16hp) killed apEX with m4a1_silencer from 1989,2789,124 at 825,2725,136
+[41808] ropz (ropz) (72hp) killed iM with tec9 from 775,2672,136 at 1989,2787,124
+[42947] ropz (ropz) (72hp) killed w0nderful with tec9 (HS) from 1064,3439,151 at 1014,3135,128
+[43170] ropz (ropz) (49hp) killed b1t with tec9 (HS) from 974,3431,128 at 1255,2960,128
+[46515] makazze (makazze) (47hp) killed apEX with fiveseven (HS) from 576,2063,138 at 7,1388,132
+[47656] mezii (mezii) (66hp) killed makazze with ak47 (HS) from 26,1376,104 at 561,2104,140
+[49117] mezii (mezii) (43hp) killed iM with ak47 (HS) from 94,1524,233 at 810,2232,136
+[49821] flameZ (flameZ) (100hp) killed w0nderful with ak47 (HS) from 300,1797,125 at 783,2168,136
+[49911] Aleksib (Aleksib) (34hp) killed flameZ with fiveseven (HS) from 473,1849,136 at 282,1881,137
+[50035] Aleksib (Aleksib) (34hp) killed mezii with fiveseven from 482,1886,136 at 252,1796,126
+[50127] b1t (b1t) (77hp) killed ropz with mp9 (HS) from 1933,1058,164 at 1414,1018,159
+[50173] ZywOo (ZywOo) (55hp) killed Aleksib with ak47 (HS) from 236,1816,127 at 485,1875,136
+[50791] ZywOo (ZywOo) (55hp) killed b1t with ak47 (HS) from -281,898,14 at 937,404,96
+[53581] flameZ (flameZ) (61hp) killed b1t with mac10 (HS) from 759,407,96 at 1486,497,120
+[53744] makazze (makazze) (100hp) killed mezii with deagle (HS) from 604,2117,140 at 25,1380,104
+[59148] apEX (apEX) (100hp) killed iM with ak47 from 151,960,83 at -163,787,46
+[59322] apEX (apEX) (100hp) killed makazze with ak47 from 73,1112,91 at 179,640,81
+[59677] apEX (apEX) (41hp) killed Aleksib with ak47 (HS) from 149,894,80 at -749,712,-23
+[70070] ropz (ropz) (100hp) killed makazze with ak47 (HS) from 285,660,20 at 1072,586,111
+[70464] ropz (ropz) (20hp) killed iM with ak47 (HS) from 276,22,66 at 828,-7,85
+[70526] ropz (ropz) (20hp) killed b1t with ak47 (HS) from 276,-35,66 at 938,46,204
+[73279] w0nderful (w0nderful) (100hp) killed flameZ with m4a1 from 1877,694,160 at 2076,-269,256
+[73444] w0nderful (w0nderful) (100hp) killed ZywOo with m4a1 from 1870,693,160 at 1970,255,160
+[73487] Aleksib (Aleksib) (54hp) killed apEX with m4a1_silencer (HS) from 2077,-170,100 at 2291,489,139
+[73510] mezii (mezii) (20hp) killed Aleksib with ak47 (HS) from 2341,923,158 at 2076,-169,100
+[78446] w0nderful (w0nderful) (100hp) killed apEX with m4a1 from 312,3027,162 at 900,2190,136
+[79377] b1t (b1t) (84hp) killed flameZ with fiveseven (HS) from 1987,199,160 at 1861,-70,142
+[80091] makazze (makazze) (90hp) killed ZywOo with fiveseven (HS) from 747,2775,143 at 862,2480,140
+[80149] mezii (mezii) (91hp) killed makazze with ak47 (HS) from 703,2296,136 at 796,2794,143
+[80416] w0nderful (w0nderful) (100hp) killed mezii with m4a1 from 1329,2892,129 at 542,2461,279
+[81782] ropz (ropz) (8hp) killed b1t with ak47 (HS) from 475,2090,140 at 424,1762,184
+[82053] w0nderful (w0nderful) (100hp) killed ropz with m4a1 from 839,2745,136 at 652,1976,136
+[86976] w0nderful (w0nderful) (100hp) killed ZywOo with awp from 414,2118,140 at 62,776,80
+[87483] b1t (b1t) (74hp) killed ropz with ak47 (HS) from 2128,-121,159 at 1354,212,135
+[87952] makazze (makazze) (93hp) killed apEX with ak47 from 428,2612,164 at 859,2536,140
+[88246] mezii (mezii) (62hp) killed w0nderful with ak47 (HS) from 844,1966,136 at 436,3161,162
+[90082] makazze (makazze) (93hp) killed flameZ with ak47 from 423,3204,164 at 659,2439,148
+[90200] Aleksib (Aleksib) (5hp) killed mezii with m4a1_silencer (HS) from 1201,2822,129 at 836,2706,136
+[95159] ZywOo (ZywOo) (83hp) killed Aleksib with ak47 (HS) from 132,1616,109 at 707,2129,136
+[95243] makazze (makazze) (73hp) killed ZywOo with ak47 (HS) from 581,2103,140 at 157,1605,109
+[98020] flameZ (flameZ) (100hp) killed w0nderful with ak47 (HS) from 1394,156,132 at 2504,-79,101
+[98483] b1t (b1t) (100hp) killed flameZ with ak47 from 1822,230,220 at 2115,123,142
+[98575] b1t (b1t) (54hp) killed mezii with ak47 (HS) from 1826,263,220 at 2073,77,127
+[98587] ropz (ropz) (100hp) killed b1t with galilar (HS) from 1980,142,145 at 1828,266,220
+[98652] ropz (ropz) (100hp) killed iM with galilar from 1963,208,160 at 2398,776,172
+[105475] flameZ (flameZ) (100hp) killed w0nderful with mac10 from 1429,189,131 at 1725,39,141
+[106098] iM (iM) (33hp) killed flameZ with m4a1_silencer (HS) from 1359,1226,181 at 1459,229,129
+[106112] ropz (ropz) (100hp) killed iM with ak47 from 1356,259,128 at 1360,1227,181
+[109173] makazze (makazze) (78hp) killed ropz with ak47 from 45,674,81 at 1203,582,119
+[109207] b1t (b1t) (95hp) killed ZywOo with m4a1 from 1721,-77,142 at 1298,316,130
+[109365] b1t (b1t) (95hp) killed mezii with m4a1 from 1482,-66,132 at 1443,369,128
+[109501] apEX (apEX) (12hp) killed Aleksib with galilar from 2030,-216,256 at 2334,819,155
+[110629] makazze (makazze) (1hp) killed apEX with ak47 from 1658,1682,160 at 1645,2790,143
+[115320] w0nderful (w0nderful) (100hp) killed apEX with awp from 413,2119,140 at 79,1149,92
+[116715] ropz (ropz) (53hp) killed iM with galilar from 1445,134,132 at 2525,-63,100
+[116740] b1t (b1t) (100hp) killed mezii with m4a1 from 2233,185,138 at 1530,34,132
+[116817] ropz (ropz) (53hp) killed b1t with galilar from 1484,60,132 at 2260,190,130
+[116991] Aleksib (Aleksib) (50hp) killed ropz with m4a1_silencer from 2405,354,144 at 1717,-55,137
+[117236] flameZ (flameZ) (100hp) killed Aleksib with tec9 from 2173,144,154 at 2369,501,155
+[119151] flameZ (flameZ) (98hp) killed makazze with m4a1 from 2475,-255,102 at 1906,-214,260
+[119379] flameZ (flameZ) (82hp) killed w0nderful with hegrenade from 2463,-259,102 at 2092,1009,170
+[138924] b1t (b1t) (61hp) killed ropz with glock (HS) from 1243,579,121 at 1567,-45,132
+[139135] flameZ (flameZ) (89hp) killed b1t with usp_silencer (HS) from 1559,-53,136 at 1262,579,122
+[140482] iM (iM) (71hp) killed flameZ with glock (HS) from 560,2075,139 at 214,1742,121
+[140684] w0nderful (w0nderful) (100hp) killed mezii with glock (HS) from 400,1986,136 at 265,1709,118
+[140855] makazze (makazze) (83hp) killed ZywOo with glock (HS) from 684,2924,138 at 945,2668,140
+[141318] w0nderful (w0nderful) (100hp) killed apEX with glock (HS) from 797,2356,136 at 262,2969,162
+[145323] apEX (apEX) (47hp) killed makazze with fiveseven (HS) from 630,2698,152 at 883,2069,136
+[146924] Aleksib (Aleksib) (82hp) killed apEX with hegrenade from 699,1991,136 at 916,2780,134
+[149555] ZywOo (ZywOo) (75hp) killed Aleksib with mp9 (HS) from 283,3136,170 at 797,2847,147
+[149591] ropz (ropz) (99hp) killed b1t with deagle (HS) from 1158,2797,129 at 50,2536,161
+[149630] flameZ (flameZ) (34hp) killed w0nderful with mp9 (HS) from 1028,2674,137 at 17,3112,161
+[149920] ropz (ropz) (44hp) killed iM with deagle from 945,2756,133 at 639,2067,139
+[153312] Aleksib (Aleksib) (66hp) killed ropz with tec9 (HS) from 1489,94,132 at 1846,15,132
+[153385] ZywOo (ZywOo) (100hp) killed w0nderful with galilar from 1485,1235,176 at 1484,148,160
+[153431] ZywOo (ZywOo) (77hp) killed makazze with galilar (HS) from 1503,1232,176 at 1318,720,136
+[153564] mezii (mezii) (100hp) killed Aleksib with galilar (HS) from 1820,205,220 at 1971,181,160
+[153708] b1t (b1t) (77hp) killed mezii with tec9 (HS) from 2069,141,152 at 1823,219,220
+[155111] flameZ (flameZ) (38hp) killed iM with mac10 from 953,665,106 at 682,-117,74
+[155753] ZywOo (ZywOo) (7hp) killed b1t with galilar from 2092,-140,256 at 1617,16,132
+[158926] b1t (b1t) (100hp) killed ZywOo with deagle (HS) from 1239,586,122 at 1523,-90,142
+[163085] ropz (ropz) (16hp) killed Aleksib with m4a1 from 1407,-88,132 at 1277,587,124
+[163097] ropz (ropz) (16hp) killed iM with m4a1 from 1411,-87,132 at 1285,540,120
+[163162] ropz (ropz) (16hp) killed makazze with m4a1 from 1451,-79,132 at 1358,500,119
+[163191] w0nderful (w0nderful) (36hp) killed ropz with deagle from 1286,576,123 at 1454,-78,132
+[163897] mezii (mezii) (100hp) killed b1t with m4a1_silencer from 2350,375,134 at 2112,88,128
+[163959] mezii (mezii) (100hp) killed w0nderful with m4a1_silencer from 2374,344,143 at 1844,-89,142
+[174274] ZywOo (ZywOo) (100hp) killed Aleksib with awp from 2422,934,165 at 1636,1186,177
+[174528] ZywOo (ZywOo) (5hp) killed iM with awp from 2385,637,165 at 1767,-62,141
+[174664] ZywOo (ZywOo) (5hp) killed makazze with awp from 2332,591,149 at 2109,1224,180
+[174765] b1t (b1t) (100hp) killed ZywOo with ak47 from 2020,-233,256 at 2302,472,138
+[174830] ropz (ropz) (100hp) killed b1t with m4a1 (HS) from 2309,-270,95 at 1999,-230,256
+[174884] ropz (ropz) (78hp) killed w0nderful with m4a1 (HS) from 2282,-289,96 at 2028,87,128
+[178517] flameZ (flameZ) (100hp) killed makazze with m4a1 (HS) from 798,2262,136 at 537,2002,136
+[178658] w0nderful (w0nderful) (88hp) killed flameZ with deagle (HS) from 608,1881,136 at 764,2468,136
+[178683] apEX (apEX) (100hp) killed Aleksib with m4a1_silencer (HS) from 680,2732,144 at 733,2016,136
+[179181] iM (iM) (89hp) killed apEX with tec9 from 907,2195,136 at 544,2647,162
+[182104] iM (iM) (74hp) killed ZywOo with m4a1 from 2,2756,161 at 1142,2649,132
+[182107] mezii (mezii) (28hp) killed b1t with m4a1_silencer from 1168,2776,124 at 854,2690,136
+[182120] mezii (mezii) (28hp) killed w0nderful with m4a1_silencer from 1170,2769,124 at 277,2543,162
+[182146] iM (iM) (74hp) killed mezii with m4a1 from 6,2833,161 at 1171,2765,124
+[182575] ropz (ropz) (11hp) killed iM with ak47 from 638,2663,150 at 37,3011,161
+[186449] ropz (ropz) (100hp) killed b1t with ak47 from 1208,176,201 at 1231,-428,247
+[186632] ropz (ropz) (100hp) killed Aleksib with ak47 (HS) from 1300,321,130 at 1495,253,133
+[186877] w0nderful (w0nderful) (99hp) killed ropz with ak47 from 1232,578,120 at 1462,203,130
+[187439] makazze (makazze) (100hp) killed mezii with ak47 (HS) from 1407,662,125 at 1370,1224,181
+[189233] w0nderful (w0nderful) (99hp) killed flameZ with ak47 from 1981,117,132 at 2115,722,220
+[189317] apEX (apEX) (29hp) killed w0nderful with m4a1_silencer from 1822,609,160 at 1975,206,160
+[189359] makazze (makazze) (100hp) killed apEX with ak47 from 2408,613,204 at 1848,617,160
+[190419] makazze (makazze) (78hp) killed ZywOo with ak47 (HS) from 1819,496,220 at 2485,933,167
+[196531] ZywOo (ZywOo) (0hp) killed ZywOo with world
+[215972] flameZ (flameZ) (100hp) killed flameZ with world from 2457,2153,132 at 2457,2153,132
+[215972] iM (iM) (100hp) killed iM with world from -1587,441,-64 at -1587,441,-64
+[215972] mezii (mezii) (100hp) killed mezii with world from 2493,2090,133 at 2493,2090,133
+[215972] makazze (makazze) (100hp) killed makazze with world from -1520,431,-64 at -1520,431,-64
+[215972] apEX (apEX) (100hp) killed apEX with world from 2292,2028,136 at 2292,2028,136
+[215972] ZywOo (ZywOo) (100hp) killed ZywOo with world from 2397,2079,133 at 2397,2079,133
+[215972] Aleksib (Aleksib) (100hp) killed Aleksib with world from -1657,420,-64 at -1657,420,-64
+[215972] ropz (ropz) (100hp) killed ropz with world from 2472,2006,135 at 2472,2006,135
+[215972] w0nderful (w0nderful) (100hp) killed w0nderful with world from -1662,289,-64 at -1662,289,-64
+[215972] b1t (b1t) (100hp) killed b1t with world from -1676,352,-64 at -1676,352,-64
+[225572] flameZ (flameZ) (89hp) killed makazze with m4a1 from 511,3099,213 at 863,2457,140
+[225820] apEX (apEX) (100hp) killed iM with m4a1_silencer (HS) from 1263,2832,129 at 698,2617,143
+[226558] Aleksib (Aleksib) (65hp) killed apEX with ak47 (HS) from 381,3293,164 at 381,3514,164
+[226684] mezii (mezii) (100hp) killed Aleksib with m4a1 from 766,3484,129 at 472,3267,202
+[228042] w0nderful (w0nderful) (22hp) killed flameZ with ak47 from 10,3167,161 at 277,2886,193
+[228125] b1t (b1t) (77hp) killed mezii with ak47 from 793,2876,145 at 302,2999,162
+[228243] ropz (ropz) (34hp) killed b1t with m4a1 from 315,3042,163 at 774,2912,141
+[228254] w0nderful (w0nderful) (19hp) killed ropz with ak47 (HS) from 1,3082,161 at 315,3042,163
+[228281] ZywOo (ZywOo) (100hp) killed w0nderful with awp from 1092,2677,133 at 9,3107,161
+
+=== Final Scoreboard ===
+  flameZ       team:3 k/d/a:13/14/5 money:$5750 pos:277,2886,193
+  iM           team:2 k/d/a:10/15/8 money:$4450 pos:698,2617,143
+  mezii        team:3 k/d/a:13/15/0 money:$3900 pos:302,2999,162
+  makazze      team:2 k/d/a:18/14/4 money:$4700 pos:863,2457,140
+  apEX         team:3 k/d/a:9/15/8 money:$5300 pos:381,3514,164
+  ZywOo        team:3 k/d/a:16/12/7 money:$3900 pos:296,2800,184
+  Aleksib      team:2 k/d/a:10/16/7 money:$5200 pos:494,3252,167
+  ropz         team:3 k/d/a:27/13/5 money:$3950 pos:315,3042,163
+  w0nderful    team:2 k/d/a:16/15/3 money:$4250 pos:9,3107,161
+  b1t          team:2 k/d/a:15/18/6 money:$5450 pos:774,2912,141
+
+=== Player Info (always available) ===
+  CSTV         steamid:90071996842377218
+  CSTV         steamid:90071996842377219
+  flameZ       steamid:76561197978835160
+  iM           steamid:76561198050250233
+  mezii        steamid:76561197973140692
+  makazze      steamid:76561199076189612
+  apEX         steamid:76561197989744167
+  ZywOo        steamid:76561198113666193
+  Aleksib      steamid:76561198013243326
+  ropz         steamid:76561197991272318
+  w0nderful    steamid:76561199063068840
+  b1t          steamid:76561198246607476

@@ -7,6 +7,8 @@ enum P2P_Messages {
 	p2p_Ping = 258;
 	p2p_VRAvatarPosition = 259;
 	p2p_WatchSynchronization = 260;
+	p2p_FightingGame_GameData = 261;
+	p2p_FightingGame_Connection = 262;
 }
 
 message CP2P_TextMessage {
@@ -27,8 +29,8 @@ message CP2P_Voice {
 }
 
 message CP2P_Ping {
-	required uint64 send_time = 1;
-	required bool is_reply = 2;
+	optional uint64 send_time = 1;
+	optional bool is_reply = 2;
 }
 
 message CP2P_VRAvatarPosition {

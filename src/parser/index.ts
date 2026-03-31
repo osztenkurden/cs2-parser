@@ -1,509 +1,363 @@
-import fs from "fs/promises";
-import snappy from "snappy";
-import timers from "node:timers";
-import ByteBuffer from "bytebuffer";
-import {
-  CDemoFullPacket,
-  CDemoPacket,
-  EDemoCommands,
-} from "../ts-proto/demo";
-import { type DecoderKeys, type Decoders, decoders } from "./decoders";
-import { BitBuffer } from "./ubitreader";
-import {
-  CMsgSource1LegacyGameEvent,
-  CMsgSource1LegacyGameEventList,
-  CMsgSource1LegacyGameEventList_descriptorT,
-  EBaseGameEvents,
-} from "../ts-proto/gameevents";
-import {
-  CSVCMsgCreateStringTable,
-  CSVCMsgUpdateStringTable,
-  SVCMessages,
-} from "../ts-proto/netmessages";
-import { GameEvents, parseRawEventData } from "./gameEvents";
-import { messages } from "./descriptors";
-import { CMsgPlayerInfo } from "../ts-proto/networkbasetypes";
-import { EventEmitter, type Readable } from "stream";
-
-export class DemoReader extends EventEmitter {
-  private _immediateTimerToken: ReturnType<typeof timers["setImmediate"]> | null = null;
-  private _parseStartTime = process.hrtime.bigint();
-  private _bytebuffer!: ByteBuffer;
-  private _chunks: Buffer[] = [];
-  private _stringTables = [] as ReturnType<
-    typeof DemoReader.prototype.parseStringTable
-  >[];
-  private _eventDescriptors!: Record<
-    number,
-    CMsgSource1LegacyGameEventList_descriptorT
-  >;
-  private _hasEnded = false;
-  private _stream: Readable | null = null;
-
-  currentTick = 0;
-
-
-  players: Record<number, CMsgPlayerInfo> = {};
-  gameEvents = new GameEvents();
-
-
-
-  private constructEventDescriptor = (data: CMsgSource1LegacyGameEventList) => {
-    const descriptors = data.descriptors.reduce((acc, descriptor) => {
-      if (descriptor.eventid) acc[descriptor.eventid] = descriptor;
-      return acc;
-    }, {} as Record<number, CMsgSource1LegacyGameEventList_descriptorT>);
-    this._eventDescriptors = descriptors;
-  };
-
-  private parseGameEvent = (gameEvent: CMsgSource1LegacyGameEvent) => {
-    const descriptor = this._eventDescriptors[gameEvent.eventid ?? -1];
-    if (!descriptor?.name) return;
-    
-    if (!this.gameEvents.eventNames().includes(descriptor.name) && !this.eventNames().includes("gameEvent")) {
-      return;
-    }
-    const gameEventData = {} as any;
-
-    for (let i = 0; i < gameEvent.keys.length; i++) {
-      const ge = gameEvent.keys[i]!;
-      const desc = descriptor.keys[i]!;
-
-      const value = parseRawEventData(ge);
-      gameEventData[desc.name!] = value;
-    }
-    this.emit("gameEvent", descriptor.name, gameEventData);
-    this.gameEvents.emit(descriptor.name, gameEventData);
-  };
-  private parseStringTable = (
-    data: Buffer,
-    name: string,
-    numEntries: number,
-    udf: boolean,
-    userDataSize: number,
-    flags: number,
-    varintBitCount: boolean
-  ) => {
-    const bitreader = new BitBuffer(data);
-
-    let idx = -1;
-    let keys: string[] = [];
-    const items: { idx: number; key: string; value: any }[] = [];
-    for (let i = 0; i < numEntries; i++) {
-      let key = "";
-      let value: Buffer | null = null;
-      if (bitreader.readBoolean()) {
-        idx++;
-      } else {
-        idx += bitreader.readUbitVar() + 1;
-      }
-
-      if (bitreader.readBoolean()) {
-        if (bitreader.readBoolean()) {
-          let position = bitreader.ReadUBits(5);
-          let length = bitreader.ReadUBits(5);
-
-          if (position >= keys.length) {
-            position = 0;
-
-            key += bitreader.readString();
-          } else {
-            const someKey = keys[position];
-            if (someKey) {
-              if (length > someKey.length) {
-                key += someKey + bitreader.readString();
-              } else {
-                key += someKey.substring(0, length) + bitreader.readString();
-              }
-            }
-          }
-        } else {
-          key += bitreader.readString();
-        }
-
-        if (keys.length >= 32) {
-          keys.shift();
-        }
-
-        keys.push(key);
-
-        if (bitreader.readBoolean()) {
-          let bits = 0;
-          let isCompressed = false;
-
-          if (udf) {
-            bits = userDataSize;
-          } else {
-            if ((flags & 0x1) !== 0) {
-              isCompressed = bitreader.readBoolean();
-            }
-            if (varintBitCount) {
-              bits = bitreader.readUbitVar() * 8;
-            } else {
-              bits = bitreader.ReadUBits(17) * 8;
-            }
-          }
-
-          value = Buffer.alloc(bits % 8 === 0 ? bits / 8 : 0);
-
-          bitreader.readBytes(value);
-
-          if (isCompressed && value?.length) {
-            value = snappy.uncompressSync(value) as Buffer;
-          }
-        } else {
-        }
-
-        if (name === "userinfo" && value?.length) {
-          const data = CMsgPlayerInfo.decode(value!);
-          this.players[data.userid! & 0xff] = data;
-        }
-
-        if (name === "instancebaseline") {
-        }
-
-        items.push({ idx, key, value });
-      }
-    }
-
-    return {
-      data: items,
-      name,
-      user_data_size: userDataSize,
-      userDataFixedSize: udf,
-      flags,
-      varintBitCount,
-    };
-  };
-
-  private createStringTable = (
-    createTableMessage: CSVCMsgCreateStringTable
-  ) => {
-    if (
-      createTableMessage.name !== "instancebaseline" &&
-      createTableMessage.name !== "userinfo"
-    )
-      return this._stringTables.push(undefined as any);
-    const data = createTableMessage.dataCompressed
-      ? (snappy.uncompressSync(
-          Buffer.from(createTableMessage.stringData!)
-        ) as Buffer)
-      : Buffer.from(createTableMessage.stringData!);
-
-    this._stringTables.push(
-      this.parseStringTable(
-        data,
-        createTableMessage.name,
-        createTableMessage.numEntries!,
-        createTableMessage.userDataFixedSize!,
-        createTableMessage.userDataSize!,
-        createTableMessage.flags!,
-        createTableMessage.usingVarintBitcounts!
-      )
-    );
-  };
-
-  private updateStringTable = (
-    updateTableMessage: CSVCMsgUpdateStringTable
-  ) => {
-    const existing = this._stringTables[updateTableMessage.tableId!];
-
-    if (!existing) {
-     // console.log(updateTableMessage.tableId, this.stringTables.length);
-      return;
-    }
-    /*const updated = this.parseStringTable(
-      Buffer.from(updateTableMessage.stringData!),
-      existing.name,
-      updateTableMessage.numChangedEntries!,
-      existing.userDataFixedSize,
-      existing.user_data_size,
-      existing.flags,
-      existing.varintBitCount
-    );
-    //console.log("UPDATED TABLE")
-    this._stringTables[updateTableMessage.tableId!] = updated;*/
-  };
-
-  private parsePacket = (packet: CDemoPacket) => {
-    if (!packet.data) return;
-
-    const data = new BitBuffer(packet.data);
-
-    while (data.RemainingBytes > 8) {
-      const cmd = data.readUbitVar();
-      const size = data.ReadUVarInt32();
-
-      const command = messages[cmd as keyof typeof messages];
-
-      if (!command) {
-        data.skipBytes(size);
-        continue;
-      }
-
-      const msgContent = Buffer.alloc(size);
-      data.readBytes(msgContent);
-      switch (command.id) {
-        case EBaseGameEvents.GE_Source1LegacyGameEventList:
-          this.constructEventDescriptor(command.class.decode(msgContent));
-          break;
-        case EBaseGameEvents.GE_Source1LegacyGameEvent:
-          this.parseGameEvent(command.class.decode(msgContent));
-          break;
-        case SVCMessages.svc_CreateStringTable:
-          this.createStringTable(command.class.decode(msgContent));
-          break;
-        case SVCMessages.svc_UpdateStringTable:
-          //console.log("REMAINING BTES", data.RemainingBytes, size);
-          this.updateStringTable(command.class.decode(msgContent));
-          break;
-        case SVCMessages.svc_ClearAllStringTables:
-          this._stringTables = [];
-          break;
-        default:
-          break;
-      }
-    }
-  };
-
-  private parseFullPacket = (packet: CDemoFullPacket) => {
-    if (!packet.packet?.data) return;
-
-    this.parsePacket(packet.packet);
-  };
-
-  private readFrame = () => {
-    this._ensureRemaining(6);
-    const EDemoCommandTypeBase = this._bytebuffer.readVarint32();
-    let tick = this._bytebuffer.readVarint32();
-    if (tick === 0xffffffff) {
-      tick = 0;
-    }
-
-    if(this.currentTick !== tick){
-      this.emit("tickend", this.currentTick);
-      this.currentTick = tick;
-      this.emit("tickstart", this.currentTick);
-    }
-
-    const size = this._bytebuffer.readVarint32();
-    this._ensureRemaining(size);
-
-    const EDemoCommandType =
-      EDemoCommandTypeBase & ~EDemoCommands.DEM_IsCompressed;
-
-    if (EDemoCommandType === EDemoCommands.DEM_Stop) {
-      this.cancel();
-      this.emit("tickend", this.currentTick);
-      this._emitEnd({ incomplete: false });
-      return;
-    }
-
-    const decoder = decoders[EDemoCommandType as keyof typeof decoders];
-
-    if (!decoder) {
-      this._bytebuffer.skip(size);
-      return;
-    }
-    const isCompressed =
-      (EDemoCommandTypeBase & EDemoCommands.DEM_IsCompressed) !== 0;
-    switch (decoder.type) {
-      /*case EDemoCommands.DEM_StringTables:
-        this.baseParse(
-          decoder.decode,
-          size,
-          isCompressed,
-          this.parseStringTables
-        );
-        break;*/
-      case EDemoCommands.DEM_FileHeader:
-        return this.baseParse(decoder.decode, size, isCompressed);
-      case EDemoCommands.DEM_Packet:
-      case EDemoCommands.DEM_SignonPacket:
-        this.baseParse(decoder.decode, size, isCompressed, this.parsePacket);
-        break;
-      case EDemoCommands.DEM_FullPacket:
-        this.baseParse(
-          decoder.decode,
-          size,
-          isCompressed,
-          this.parseFullPacket
-        );
-        break;
-      default:
-        this._bytebuffer.skip(size);
-        break;
-    }
-  };
-
-  private baseParse = <T extends Decoders[DecoderKeys]["decode"]>(
-    decoder: T,
-    size: number,
-    isCompressed: boolean,
-    parser?: (data: ReturnType<T>) => ReturnType<T> | void
-  ) => {
-    const bytes = this._bytebuffer.readBytes(size).toBuffer();
-    const decompressedBytes = isCompressed
-      ? (snappy.uncompressSync(bytes) as Buffer)
-      : bytes;
-    if(!parser) return decoder(decompressedBytes) as ReturnType<T>;
-    return parser(decoder(decompressedBytes) as ReturnType<T>);
-  };
-
-  private _tryEnsureRemaining(bytes: number) {
-    const remaining = this._bytebuffer.remaining();
-    if (remaining >= bytes) return true;
-
-    let left = bytes - remaining;
-    for (let i = 0; i < this._chunks.length && left > 0; ++i)
-      left -= this._chunks[i]!.length;
-
-    // We don't have enough bytes with what we have buffered up
-    if (left > 0) return false;
-
-    const mark = Math.max(0, this._bytebuffer.markedOffset);
-    const newOffset = this._bytebuffer.offset - mark;
-
-    // Reset to the marked offset. We're never going to need the bytes preceding it
-    this._bytebuffer.offset = mark;
-    this._bytebuffer = ByteBuffer.wrap(
-      Buffer.concat([
-        new Uint8Array(this._bytebuffer.toBuffer()),
-        ...this._chunks
-      ]),
-      true
-    );
-    this._chunks = [];
-
-    // Advance to the point we'd already read up to
-    this._bytebuffer.offset = newOffset;
-
-    return true;
-  }
-  private _ensureRemaining(bytes: number) {
-    if (!this._tryEnsureRemaining(bytes)) {
-      throw new RangeError(
-        `Not enough data to continue parsing. ${bytes} bytes needed`
-      );
-    }
-  }
-
-  parseStream = async (stream: Readable) => {
-    this._stream = stream;
-    const onChunk = (chunk: Buffer) => {
-      if(this._bytebuffer === undefined){
-        this._bytebuffer = ByteBuffer.wrap(chunk, 'utf-8');
-        return;
-      }
-      this._chunks.push(chunk);
-    }
-
-    const onData = () => {
-
-      try {
-        while(this._bytebuffer.remaining() > 0 || this._chunks.length > 0){
-          this._bytebuffer.mark();
-          this.readFrame();
-        }
-
-      } catch(e) {
-        if (e instanceof RangeError) {
-          // Reset the byte buffer to the start of the last command
-          this._bytebuffer.offset = Math.max(0, this._bytebuffer.markedOffset);
-        } else {
-          stream.off("data", onChunk);
-          const error =
-            e instanceof Error
-              ? e
-              : new Error(`Exception during parsing: ${e}`);
-          this._emitEnd({ error, incomplete: false });
-        }
-      }
-    }
-
-    const readHeader = () => {
-      if(!this._tryEnsureRemaining(4096)) return;
-
-      stream.off("data", readHeader);
-      this._bytebuffer.skip(16);
-      const header = this.readFrame()!;
-
-      this.emit("header", header);
-
-      stream.on("data", onData);
-    }
-
-    stream.on("data", onChunk);
-    stream.on("data", readHeader);
-
-    stream.on("error", e => {
-      stream.off("data", onChunk);
-      this._emitEnd({ error: e, incomplete: false });
-    });
-
-    stream.on("end", () => {
-      const fullyConsumed =
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-        this._bytebuffer?.remaining() === 0 && this._chunks.length === 0;
-      if (fullyConsumed) return;
-    });
-  }
-
-  parseDemo = async (demo: string | Buffer) => {
-
-    this._bytebuffer = ByteBuffer.wrap(
-      (typeof demo === "string" ? await fs.readFile(demo) : demo).subarray(16),
-      true
-    );
-    process.nextTick(this._parseRecurse);
-  };
-
-  private _emitEnd(e: any/*IDemoEndEvent*/) {
-    if (this._hasEnded) return;
-
-    if (e.error) {
-      this.emit("error", e.error);
-    }
-
-    this.emit("end", e);
-    this._hasEnded = true;
-  }
-  private _parseRecurse = () => {
-    this._immediateTimerToken = timers.setImmediate(this._parseRecurse);
-    this.readFrame();
-    
-    try {
-      this.emit("progress", this._bytebuffer.offset / this._bytebuffer.limit);
-      this.readFrame();
-    } catch (e) {
-      // Always cancel if we have an error - we've already scheduled the next tick
-      this.cancel();
-
-      
-      // #11, #172: Some demos have been written incompletely.
-      // Don't throw an error when we run out of bytes to read.
-      if (
-        e instanceof RangeError /*&&
-        this.header.playbackTicks === 0 &&
-        this.header.playbackTime === 0 &&
-        this.header.playbackFrames === 0*/
-      ) {
-        this._emitEnd({ incomplete: true });
-      } else {
-        const error =
-          e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
-        this._emitEnd({ error, incomplete: false });
-      }
-    }
-    
-  };
-  public cancel(): void {
-    this._stream?.destroy();
-    this._stream = null;
-    if (this._immediateTimerToken) {
-      timers.clearImmediate(this._immediateTimerToken);
-      this._immediateTimerToken = null;
-    }
-    console.log("Parsed in", (process.hrtime.bigint() - this._parseStartTime)/1000000n +"ms");
-  }
+import fs from 'fs-extra';
+import { EDemoCommands } from '../ts-proto/demo.js';
+import { decoders } from './descriptors/decoders.js';
+import { BitBuffer } from './ubitreader.js';
+import { GameEvents } from './descriptors/gameEventEmitter.js';
+import { type StringTableCreated } from './descriptors/index.js';
+import { CMsgPlayerInfo } from '../ts-proto/networkbasetypes.js';
+import { type Readable } from 'stream';
+import { TypedEventEmitter } from './descriptors/typedEmitter.js';
+import { EntityMode, type EmitQueue, type OutputEvents } from './workerParser/worker.js';
+import { singleThreadParse, initParse } from './workerParser/utils.js';
+import { Player } from '../helpers/player.js';
+import { Team } from '../helpers/team.js';
+import { GameRules } from '../helpers/gameRules.js';
+import type { TypedEntity, EntityProperties, KnownClassName } from '../generated/entityTypes.js';
+import { isEntityClass } from '../generated/entityTypes.js';
+
+export class DemoReader extends TypedEventEmitter<OutputEvents> {
+	_parseStartTime = 0n;
+	private _stringTables = [] as (StringTableCreated | null)[];
+	private _hasEnded = false;
+	private _stream: Readable | null = null;
+
+	entities: TypedEntity[];
+	private _directWriteMode = false;
+
+	currentTick = -1;
+
+	private _playerInfoMap: Record<number, CMsgPlayerInfo> = {};
+
+	gameEvents = new GameEvents();
+
+	/** All players from the userinfo string table. Available even with EntityMode.NONE. */
+	get players(): CMsgPlayerInfo[] {
+		return Object.values(this._playerInfoMap);
+	}
+
+	/** Player info map keyed by userid & 0xFF. */
+	get playerInfoMap(): Record<number, CMsgPlayerInfo> {
+		return this._playerInfoMap;
+	}
+
+	/** Get a Player helper by controller entity ID. Requires EntityMode.ALL. */
+	getPlayer(entityId: number): Player | null {
+		const e = this.entities[entityId];
+		if (e && e.className === 'CCSPlayerController') {
+			return new Player(this, entityId);
+		}
+		return null;
+	}
+
+	/** All player controller entities as Player helpers. Requires EntityMode.ALL. */
+	get playerControllers(): Player[] {
+		const result: Player[] = [];
+		for (let i = 0; i < this.entities.length; i++) {
+			const e = this.entities[i];
+			if (e && e.className === 'CCSPlayerController') {
+				result.push(new Player(this, i));
+			}
+		}
+		return result;
+	}
+
+	/** All team entities as Team helper objects */
+	get teams(): Team[] {
+		const result: Team[] = [];
+		for (let i = 0; i < this.entities.length; i++) {
+			const e = this.entities[i];
+			if (e && e.className === 'CCSTeam') {
+				result.push(new Team(this, i));
+			}
+		}
+		return result;
+	}
+
+	/** Game rules helper (or null if not yet created) */
+	get gameRules(): GameRules | null {
+		for (let i = 0; i < this.entities.length; i++) {
+			const e = this.entities[i];
+			if (e && e.className === 'CCSGameRulesProxy') {
+				return new GameRules(this, i);
+			}
+		}
+		return null;
+	}
+
+	/** Get a typed entity by index and class name. Returns typed properties or undefined. */
+	getEntity<T extends KnownClassName>(entityId: number, className: T): EntityProperties<T> | undefined {
+		const e = this.entities[entityId];
+		if (isEntityClass(e, className)) {
+			return e.properties as EntityProperties<T>;
+		}
+		return undefined;
+	}
+
+	/** Find all entities of a specific class, with typed properties */
+	findEntities<T extends KnownClassName>(className: T): { entityId: number; properties: EntityProperties<T> }[] {
+		const result: { entityId: number; properties: EntityProperties<T> }[] = [];
+		for (let i = 0; i < this.entities.length; i++) {
+			const e = this.entities[i];
+			if (isEntityClass(e, className)) {
+				result.push({ entityId: i, properties: e.properties as EntityProperties<T> });
+			}
+		}
+		return result;
+	}
+
+	/** Re-exported type guard for narrowing entities */
+	static isEntityClass = isEntityClass;
+
+	constructor() {
+		super();
+		this.entities = [];
+		this.gameEvents.listen(this);
+		this.on('end', () => {
+			this._hasEnded = true;
+			this.emit(
+				'debug',
+				`[${this.currentTick}] Parsed demo in ${(process.hrtime.bigint() - this._parseStartTime) / 10n ** 6n}ms`
+			);
+		});
+
+		this.on('tickstart', tick => {
+			this.currentTick = tick;
+		});
+		this.on('svc_CreateStringTable', table => {
+			if (!table) return this._stringTables.push(table);
+
+			for (const player of table.players) {
+				this._playerInfoMap[player.userid! & 255] = player;
+			}
+
+			this._stringTables.push(table.table);
+		});
+
+		this.on('entityCreated', ([entityId, classId, entityType, className]) => {
+			if (this._directWriteMode) return;
+			this.entities[entityId] = {
+				classId,
+				entityType,
+				className,
+				properties: {}
+			};
+		});
+
+		this.on('entityUpdated', info => {
+			if (this._directWriteMode) return;
+			if (!this.entities[info.entityId]) return;
+			//@ts-expect-error We know what we doin son
+			this.entities[info.entityId]!.properties[this.propIdToName[info.propId]!] = info.value;
+		});
+
+		this.on('entityDeleted', entityId => {
+			if (this._directWriteMode) return;
+			this.entities[entityId] = undefined as any;
+		});
+	}
+
+	static parseHeader = (filePath: string) => {
+		const bufferSize = 4096;
+
+		const fd = fs.openSync(filePath, 'r');
+		try {
+			const buffer = Buffer.alloc(bufferSize);
+
+			fs.readSync(fd, buffer, 0, bufferSize, 16);
+
+			const byteBuffer = new BitBuffer(buffer);
+
+			const EDemoCommandTypeBase = byteBuffer.ReadUVarInt32();
+			const type = EDemoCommandTypeBase & ~EDemoCommands.DEM_IsCompressed;
+
+			if (type !== EDemoCommands.DEM_FileHeader) return null;
+
+			byteBuffer.ReadUVarInt32(); // TICK
+			const size = byteBuffer.ReadUVarInt32();
+			const headerBuffer = Buffer.alloc(size);
+			byteBuffer.readBytes(headerBuffer);
+			const data = decoders[EDemoCommands.DEM_FileHeader].decode(headerBuffer);
+			return data;
+		} finally {
+			fs.closeSync(fd);
+		}
+	};
+
+	propIdToName: Record<number, string> = {};
+
+	private _emitQueue: EmitQueue = queue => {
+		if (this._hasEnded) return;
+		for (const element of queue) {
+			if (this._hasEnded) return;
+			this.emit(element[0], element[1]);
+		}
+		queue.length = 0;
+	};
+
+	/** Core sync parse from a Buffer. */
+	private _parseSync(buffer: Buffer, opts: { entities?: EntityMode } = {}) {
+		const entityMode = opts.entities ?? EntityMode.NONE;
+		this._directWriteMode = true;
+		this.gameEvents.entityMode = entityMode;
+		singleThreadParse({ demo: buffer, entities: entityMode, parser: this }, this._emitQueue);
+		this._directWriteMode = false;
+		this._hasEnded = true;
+	}
+
+	/** Core streaming parse from a Readable. */
+	private _parseStream(stream: Readable, opts: { entities?: EntityMode } = {}): Promise<void> {
+		const entityMode = opts.entities ?? EntityMode.NONE;
+		this._stream = stream;
+		this._directWriteMode = true;
+		this.gameEvents.entityMode = entityMode;
+
+		const { promise, resolve, reject } = Promise.withResolvers<void>();
+
+		let initialized = false;
+		let finished = false;
+		let pendingChunks: Buffer[] = [];
+		let bufferHelper: ReturnType<typeof initParse>['bufferHelper'];
+		let packetHandler: ReturnType<typeof initParse>['packetHandler'];
+		let eventQueue: ReturnType<typeof initParse>['eventQueue'];
+
+		const finish = () => {
+			finished = true;
+			stream.off('data', onData);
+			stream.off('error', onError);
+			stream.off('end', onEnd);
+			this._directWriteMode = false;
+			this._hasEnded = true;
+		};
+
+		const tryInit = () => {
+			const totalPending = pendingChunks.reduce((s, c) => s + c.length, 0);
+			if (totalPending < 16) return false;
+
+			const parsed = initParse(
+				{ demo: Buffer.concat(pendingChunks), entities: entityMode, parser: this },
+				this._emitQueue
+			);
+			bufferHelper = parsed.bufferHelper;
+			packetHandler = parsed.packetHandler;
+			eventQueue = parsed.eventQueue;
+			pendingChunks = [];
+			initialized = true;
+			return true;
+		};
+
+		const processFrames = () => {
+			const more = bufferHelper.readAvailableFrames(packetHandler);
+			if (!more) {
+				this._emitQueue(eventQueue, 0, false);
+				finish();
+				resolve();
+			}
+		};
+
+		const onData = (chunk: Buffer) => {
+			if (finished) return;
+
+			if (!initialized) {
+				pendingChunks.push(chunk);
+				if (!tryInit()) return;
+			} else {
+				bufferHelper.pushChunk(chunk);
+			}
+
+			try {
+				processFrames();
+			} catch (e) {
+				finish();
+				const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
+				this.emit('end', { error, incomplete: false });
+				reject(error);
+			}
+		};
+
+		const onError = (err: Error) => {
+			if (finished) return;
+			finish();
+			this.emit('end', { error: err, incomplete: true });
+			reject(err);
+		};
+
+		const onEnd = () => {
+			if (finished) return;
+			if (initialized) {
+				try {
+					bufferHelper.readAvailableFrames(packetHandler);
+				} catch {}
+			}
+			finish();
+			this.emit('end', { incomplete: true });
+			resolve();
+		};
+
+		stream.on('data', onData);
+		stream.on('error', onError);
+		stream.on('end', onEnd);
+
+		return promise;
+	}
+
+	/**
+	 * Parse a CS2 demo file.
+	 *
+	 * Accepts a file path, a Buffer, or a Readable stream.
+	 * File paths stream by default (non-blocking, low memory). Pass `stream: false` to load into memory instead.
+	 *
+	 * @param opts.entities - Entity parsing mode:
+	 *   - `EntityMode.NONE` (default) — skip entity parsing entirely (fastest)
+	 *   - `EntityMode.ALL` — parse and track all entities
+	 *   - `EntityMode.ONLY_GAME_RULES` — parse entities but only store game rules (enables synthetic round_start/round_end events)
+	 *
+	 * @example
+	 * // File path (streams by default — non-blocking, low memory)
+	 * await parser.parseDemo('demo.dem', { entities: EntityMode.ALL });
+	 *
+	 * // File path sync (loads into memory, blocks event loop)
+	 * parser.parseDemo('demo.dem', { entities: EntityMode.ALL, stream: false });
+	 *
+	 * // Readable stream
+	 * await parser.parseDemo(createReadStream('demo.dem'), { entities: EntityMode.ALL });
+	 *
+	 * // Pre-loaded buffer
+	 * parser.parseDemo(buffer, { entities: EntityMode.ALL });
+	 */
+	parseDemo(source: Readable, opts?: { entities?: EntityMode }): Promise<void>;
+	parseDemo(source: string, opts: { entities?: EntityMode; stream: false }): void;
+	parseDemo(source: string, opts?: { entities?: EntityMode; stream?: true }): Promise<void>;
+	parseDemo(source: Buffer, opts?: { entities?: EntityMode }): void;
+	parseDemo(
+		source: string | Buffer | Readable,
+		opts: { entities?: EntityMode; stream?: boolean } = {}
+	): void | Promise<void> {
+		if (this._hasEnded) throw 'Demo has already been parsed';
+		this._parseStartTime = process.hrtime.bigint();
+
+		if (typeof source === 'string') {
+			if (opts.stream === false) {
+				this._parseSync(fs.readFileSync(source), opts);
+				return;
+			}
+			return this._parseStream(fs.createReadStream(source), opts);
+		}
+
+		if (Buffer.isBuffer(source)) {
+			this._parseSync(source, opts);
+			return;
+		}
+
+		return this._parseStream(source, opts);
+	}
+
+	public cancel() {
+		if (this._hasEnded) throw 'Demo has already been parsed';
+
+		this._hasEnded = true;
+		this._stream?.destroy();
+		this._stream = null;
+		this.emit('cancel');
+		this.emit('end', { incomplete: true });
+	}
 }

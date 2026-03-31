@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc:*)",
+      "Bash(find . -name \"*.ts\" -type f -exec wc -l {} +)",
+      "Bash(find /repos/cs2parser -name \"*.ts\" -type f -exec wc -l {} +)",
+      "Bash(find C:/repos/cs2parser -name *.ts -type f -exec wc -l {} +)",
+      "Bash(ls:*)",
+      "Bash(xxd)",
+      "Bash(bun:*)",
+      "Bash(for i:*)",
+      "Bash(do)",
+      "Bash(done)",
+      "Bash(grep -n QueueEvent ./src/parser/**/*.ts)",
+      "Bash(grep:*)",
+      "Bash(find /c/repos/cs2parser/src/proto -name *.proto)",
+      "Bash(find . -maxdepth 2 -name *.sh -o -name Makefile -o -name *.yaml -o -name *.yml)",
+      "Bash(find /c/repos/cs2parser/src/ts-proto -name *.ts)",
+      "Bash(find /c/repos/cs2parser -maxdepth 2 -type f \\\\\\(-name *generate* -o -name *proto* -o -name buf.gen* -o -name buf.yaml -o -name Makefile \\\\\\))",
+      "Bash(find /c/repos/cs2parser -maxdepth 3 -type f \\\\\\(-name *.sh -o -name *.json \\\\\\))",
+      "Bash(find /c/repos/cs2parser -maxdepth 2 -type f -name *.md)",
+      "Bash(find /c/repos/cs2parser -maxdepth 2 -name *.txt -o -name *.md -o -name *.docx)",
+      "Bash(curl -s \"https://api.github.com/repos/SteamDatabase/GameTracking-CS2/contents/Protobufs\")",
+      "Bash(curl -sL \"https://api.github.com/repos/SteamDatabase/GameTracking-CS2/contents/Protobufs\")",
+      "Bash(for method:*)",
+      "Bash(echo \"=== $method ===\")",
+      "Bash(npx tsup:*)",
+      "Bash(npm run:*)",
+      "Bash(npx tsc:*)"
+    ]
+  }
+}

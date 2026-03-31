@@ -1,0 +1,28 @@
+# Source
+src/
+scripts/
+
+# Test & dev files
+tester2.ts
+test_consistency.ts
+stream.ts
+header.ts
+memory.ts
+test_all.ts
+tester2.js
+pnpm-workspace.yaml
+kills.ts
+stream_output*.txt
+baseline_dump.json
+dump.json
+dump.bin
+_bench_tmp.ts
+
+# Config
+tsconfig.json
+eslint.config.js
+.prettierrc
+
+# Misc
+.claude/
+node_modules/
