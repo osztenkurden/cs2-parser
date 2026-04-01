@@ -2,6 +2,14 @@
 	"version": "0.0.10",
 	"name": "cs2parser",
 	"type": "module",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/osztenkurden/cs2parser.git"
+	},
+	"bugs": {
+		"url": "https://github.com/osztenkurden/cs2parser/issues"
+	},
+	"homepage": "https://github.com/osztenkurden/cs2parser#readme",
 	"dependencies": {
 		"@bufbuild/protobuf": "^2.10.0",
 		"bytebuffer": "^5.0.1",
