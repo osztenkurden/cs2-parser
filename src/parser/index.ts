@@ -206,6 +206,16 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 		this._hasEnded = true;
 	}
 
+	/** Sync parse from a file path using chunked reads (low memory). */
+	private _parseSyncFile(filePath: string, opts: { entities?: EntityMode } = {}) {
+		const entityMode = opts.entities ?? EntityMode.NONE;
+		this._directWriteMode = true;
+		this.gameEvents.entityMode = entityMode;
+		ParseSession.fromFile(filePath, entityMode, this._emitQueue, this).runSync();
+		this._directWriteMode = false;
+		this._hasEnded = true;
+	}
+
 	/** Core streaming parse from a Readable. */
 	private _parseStream(stream: Readable, opts: { entities?: EntityMode } = {}): Promise<void> {
 		const entityMode = opts.entities ?? EntityMode.NONE;
@@ -325,7 +335,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 
 		if (typeof source === 'string') {
 			if (opts.stream === false) {
-				this._parseSync(fs.readFileSync(source), opts);
+				this._parseSyncFile(source, opts);
 				return;
 			}
 			return this._parseStream(fs.createReadStream(source), opts);

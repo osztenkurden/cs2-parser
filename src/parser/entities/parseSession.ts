@@ -1,3 +1,4 @@
+import fs from 'fs-extra';
 import ByteBuffer from 'bytebuffer';
 import snappy from 'snappy';
 import { BitBuffer } from '../ubitreader.js';
@@ -23,10 +24,17 @@ export class ParseSession {
 	// Module-level singletons (shared across sessions)
 	private static readonly PACKET_TEMP_BUFFER = new Uint8Array(new ArrayBuffer(2 ** 18));
 	private static readonly entityAllocator = createAllocator();
+	private static readonly READ_BUFFER_SIZE = 4 * 1024 * 1024; // 4 MB
 
 	// Buffer state
 	private bytebuffer: ByteBuffer;
 	private chunks: Buffer[] = [];
+
+	// File-based reading state (set by fromFile)
+	private fd: number | null = null;
+	private readBuffer: Buffer | null = null;
+	private fileOffset = 0;
+	private fileSize = 0;
 
 	// Parse state
 	private entityParser: EntityParser | null = null;
@@ -59,6 +67,22 @@ export class ParseSession {
 		this.emitMainQueue = emitMainQueue;
 	}
 
+	/** Create a session that reads from a file in fixed-size chunks instead of loading the entire file into memory. */
+	static fromFile(filePath: string, entityMode: EntityMode, emitMainQueue: EmitQueue, parser?: DemoReader): ParseSession {
+		const fd = fs.openSync(filePath, 'r');
+		const fileSize = fs.fstatSync(fd).size;
+		const readBuffer = Buffer.alloc(ParseSession.READ_BUFFER_SIZE);
+		const initialRead = Math.min(readBuffer.length, fileSize);
+		fs.readSync(fd, readBuffer, 0, initialRead, 0);
+
+		const session = new ParseSession(readBuffer.subarray(0, initialRead), entityMode, emitMainQueue, parser);
+		session.fd = fd;
+		session.readBuffer = readBuffer;
+		session.fileOffset = initialRead;
+		session.fileSize = fileSize;
+		return session;
+	}
+
 	// === Public API ===
 
 	/** Run synchronous parse to completion. */
@@ -69,23 +93,35 @@ export class ParseSession {
 		});
 		let frameCount = 0;
 
-		while (true) {
-			if (forceBreak) break;
-			try {
-				if (++frameCount % 5000 === 0) {
-					this.enqueueEvent('progress', this.bytebuffer.offset / this.bytebuffer.limit);
+		try {
+			while (true) {
+				if (forceBreak) break;
+				try {
+					if (++frameCount % 5000 === 0) {
+						this.enqueueEvent(
+							'progress',
+							this.fd !== null
+								? this.fileOffset / this.fileSize
+								: this.bytebuffer.offset / this.bytebuffer.limit
+						);
+					}
+					if (!this.readFrame()) break;
+				} catch (e) {
+					if (e instanceof RangeError) {
+						this.enqueueEvent('end', { incomplete: true });
+					} else {
+						const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
+						this.enqueueEvent('debug', JSON.stringify(this.dumpState()));
+						this.enqueueEvent('error', { error: e } as any);
+						this.enqueueEvent('end', { error, incomplete: false });
+					}
+					break;
 				}
-				if (!this.readFrame()) break;
-			} catch (e) {
-				if (e instanceof RangeError) {
-					this.enqueueEvent('end', { incomplete: true });
-				} else {
-					const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
-					this.enqueueEvent('debug', JSON.stringify(this.dumpState()));
-					this.enqueueEvent('error', { error: e } as any);
-					this.enqueueEvent('end', { error, incomplete: false });
-				}
-				break;
+			}
+		} finally {
+			if (this.fd !== null) {
+				fs.closeSync(this.fd);
+				this.fd = null;
 			}
 		}
 
@@ -129,6 +165,12 @@ export class ParseSession {
 		const remaining = this.bytebuffer.remaining();
 		if (remaining >= bytes) return true;
 
+		// File-based path: compact and refill from fd
+		if (this.fd !== null && this.fileOffset < this.fileSize) {
+			return this.refillFromFile(bytes);
+		}
+
+		// Stream-based path: coalesce pending chunks
 		let left = bytes - remaining;
 		for (let i = 0; i < this.chunks.length && left > 0; ++i) left -= this.chunks[i]!.length;
 
@@ -149,6 +191,32 @@ export class ParseSession {
 		this.bytebuffer.offset = newOffset;
 
 		return true;
+	}
+
+	/** Compact unread bytes to the start of readBuffer and read more from the file. */
+	private refillFromFile(needed: number): boolean {
+		const buf = this.readBuffer!;
+		const unread = this.bytebuffer.remaining();
+
+		// Copy unconsumed bytes to the start of the read buffer
+		if (unread > 0) {
+			const src = this.bytebuffer.buffer as Buffer;
+			src.copy(buf, 0, this.bytebuffer.offset, this.bytebuffer.offset + unread);
+		}
+
+		// Fill the rest from file
+		const space = buf.length - unread;
+		const toRead = Math.min(space, this.fileSize - this.fileOffset);
+		if (toRead > 0) {
+			fs.readSync(this.fd!, buf, unread, toRead, this.fileOffset);
+			this.fileOffset += toRead;
+		}
+
+		const totalAvailable = unread + toRead;
+		this.bytebuffer = ByteBuffer.wrap(buf.subarray(0, totalAvailable), true);
+		this.bytebuffer.noAssert = true;
+
+		return totalAvailable >= needed;
 	}
 
 	private ensureRemaining(bytes: number): void {
