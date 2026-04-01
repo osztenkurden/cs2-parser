@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 
 // Import parsing internals
 import { DemoReader } from '../src/parser/index.js';
+import { EntityMode } from '../src/parser/workerParser/worker.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.join(__dirname, '..', 'src', 'generated');
@@ -51,7 +52,7 @@ function collectFromDemo(demoPath: string): Map<string, SerializerData> {
 	const parser = new DemoReader();
 	const entityMap = new Map<string, SerializerData>();
 
-	parser.parseDemo(demoPath, { entities: true });
+	parser.parseDemo(demoPath, { entities: EntityMode.ALL });
 
 	// propIdToName gives us: propId → "ClassName.SubSerializer.fieldName"
 	// We group by top-level class name
@@ -81,7 +82,7 @@ function collectFromDemo(demoPath: string): Map<string, SerializerData> {
 
 		for (const field of serializer.fields) {
 			if (field.tsType !== 'unknown') continue;
-			const value = entity.properties[field.propName];
+			const value = entity.properties[field.propName as keyof typeof entity.properties];
 			if (value === undefined) continue;
 			field.tsType = inferTypeFromValue(value);
 		}
