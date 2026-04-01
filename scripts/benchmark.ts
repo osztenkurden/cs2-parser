@@ -1,11 +1,12 @@
+import { execSync } from 'child_process';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { DemoReader, EntityMode } from '../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
+const RUNNER = path.join(__dirname, 'benchmark-run.ts');
 const OUTPUT = path.join(ROOT, 'benchmark.md');
 const demoPath = process.argv[2] ?? 'E:/Repositories/demofile-net-main/demos/14140.dem';
 
@@ -28,32 +29,12 @@ function mbPerSec(result: Result): string {
 	return ((sizeBytes / 1024 / 1024) / (result.ms / 1000)).toFixed(1) + ' MB/s';
 }
 
-function collect(p: DemoReader, ms: number): Omit<Result, 'label' | 'blocking'> {
-	const mem = process.memoryUsage();
-	return {
-		time: (ms / 1000).toFixed(1) + 's',
-		ms,
-		rss: (mem.rss / 1024 / 1024).toFixed(0) + 'MB',
-		heap: (mem.heapUsed / 1024 / 1024).toFixed(0) + 'MB',
-		entities: p.entities.filter(Boolean).length,
-		tick: p.currentTick
-	};
-}
-
-async function runBenchmark(
-	label: string,
-	blocking: boolean,
-	fn: (p: DemoReader) => void | Promise<void>
-): Promise<Result> {
-	// Brief pause to let GC settle between runs
-	global.gc?.();
-	await new Promise(resolve => setTimeout(resolve, 200));
-
-	const p = new DemoReader();
-	const start = performance.now();
-	await fn(p);
-	const ms = performance.now() - start;
-	return { label, blocking: blocking ? 'yes' : 'no', ...collect(p, ms) };
+function run(label: string, method: string, entityMode: string, blocking: boolean): Result {
+	const result = execSync(
+		`bun ${RUNNER} ${JSON.stringify(demoPath)} ${method} ${entityMode}`,
+		{ cwd: ROOT, timeout: 300000, encoding: 'utf-8' }
+	).trim();
+	return { label, blocking: blocking ? 'yes' : 'no', ...JSON.parse(result) };
 }
 
 console.log(`Benchmarking: ${path.basename(demoPath)} (${sizeMB} MB)\n`);
@@ -61,17 +42,16 @@ console.log(`Benchmarking: ${path.basename(demoPath)} (${sizeMB} MB)\n`);
 // --- Entity Mode Comparison (streaming, default behavior) ---
 console.log('=== Entity Mode Comparison (stream) ===');
 
-const modeResults: Result[] = [];
+const modeBenchmarks: { label: string; entityMode: string }[] = [
+	{ label: '`EntityMode.NONE`', entityMode: 'NONE' },
+	{ label: '`EntityMode.ONLY_GAME_RULES`', entityMode: 'ONLY_GAME_RULES' },
+	{ label: '`EntityMode.ALL`', entityMode: 'ALL' }
+];
 
-for (const [label, entityMode] of [
-	['`EntityMode.NONE`', undefined],
-	['`EntityMode.ONLY_GAME_RULES`', EntityMode.ONLY_GAME_RULES],
-	['`EntityMode.ALL`', EntityMode.ALL]
-] as const) {
-	process.stdout.write(`  ${label}...`);
-	const r = await runBenchmark(label, false, async p => {
-		await p.parseDemo(demoPath, entityMode !== undefined ? { entities: entityMode } : undefined);
-	});
+const modeResults: Result[] = [];
+for (const b of modeBenchmarks) {
+	process.stdout.write(`  ${b.label}...`);
+	const r = run(b.label, 'path-stream', b.entityMode, false);
 	modeResults.push(r);
 	console.log(` ${mbPerSec(r)} | ${r.time} | ${r.rss} RSS | ${r.heap} heap | ${r.entities} entities`);
 }
@@ -79,33 +59,17 @@ for (const [label, entityMode] of [
 // --- Parse Method Comparison (all with EntityMode.ALL) ---
 console.log('\n=== Parse Method Comparison (EntityMode.ALL) ===');
 
-const methodBenchmarks: { label: string; blocking: boolean; fn: (p: DemoReader) => void | Promise<void> }[] = [
-	{
-		label: '`parseDemo(path)`',
-		blocking: false,
-		fn: async p => { await p.parseDemo(demoPath, { entities: EntityMode.ALL }); }
-	},
-	{
-		label: '`parseDemo(path, {stream: false})`',
-		blocking: true,
-		fn: p => { p.parseDemo(demoPath, { entities: EntityMode.ALL, stream: false }); }
-	},
-	{
-		label: '`parseDemo(buffer)`',
-		blocking: true,
-		fn: p => { p.parseDemo(fs.readFileSync(demoPath), { entities: EntityMode.ALL }); }
-	},
-	{
-		label: '`parseDemo(stream)`',
-		blocking: false,
-		fn: async p => { await p.parseDemo(fs.createReadStream(demoPath), { entities: EntityMode.ALL }); }
-	}
+const methodBenchmarks: { label: string; method: string; blocking: boolean }[] = [
+	{ label: '`parseDemo(path)`', method: 'path-stream', blocking: false },
+	{ label: '`parseDemo(path, {stream: false})`', method: 'path-sync', blocking: true },
+	{ label: '`parseDemo(buffer)`', method: 'buffer', blocking: true },
+	{ label: '`parseDemo(stream)`', method: 'stream', blocking: false }
 ];
 
 const methodResults: Result[] = [];
 for (const b of methodBenchmarks) {
 	process.stdout.write(`  ${b.label}...`);
-	const r = await runBenchmark(b.label, b.blocking, b.fn);
+	const r = run(b.label, b.method, 'ALL', b.blocking);
 	methodResults.push(r);
 	console.log(` ${mbPerSec(r)} | ${r.time} | ${r.rss} RSS | ${r.heap} heap`);
 }
