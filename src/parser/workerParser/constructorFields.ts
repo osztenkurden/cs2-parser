@@ -175,8 +175,8 @@ const D_AMMO = 19;
 const D_QANGLE_PRES = 20;
 const D_GAME_MODE_RULES = 21;
 
-type QuantalizedFloatDecoder = { type: typeof D_QUANTALIZED_FLOAT; decoder: number };
-type Decoder = number | QuantalizedFloatDecoder;
+export type QuantalizedFloatDecoder = { type: typeof D_QUANTALIZED_FLOAT; decoder: number };
+export type Decoder = number | QuantalizedFloatDecoder;
 
 export const Decoders = {
 	QuantalizedFloatDecoder: { type: D_QUANTALIZED_FLOAT, decoder: 0 } as QuantalizedFloatDecoder,
@@ -759,7 +759,8 @@ export const constructorFieldHelper = {
 		fields: (Field | null)[],
 		serializerName: string,
 		map: Record<number, string>,
-		currentEntityId: { id: number }
+		currentEntityId: { id: number },
+		decoderMap?: Record<number, Decoder>
 	) => {
 		for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
 			if (!fields[fieldIndex]) {
@@ -773,6 +774,7 @@ export const constructorFieldHelper = {
 					const value = field.value as ValueField;
 					const result = `${serializerName}.${value.name}`;
 					map[currentEntityId.id] = result;
+					if (decoderMap) decoderMap[currentEntityId.id] = value.decoder;
 					value.prop_id = currentEntityId.id;
 					currentEntityId.id++;
 					break;
@@ -781,7 +783,7 @@ export const constructorFieldHelper = {
 					const value = field.value as SerializerField;
 					const result = `${serializerName}.${value.serializer.name}`;
 
-					constructorFieldHelper.traverseFields(value.serializer.fields, result, map, currentEntityId);
+					constructorFieldHelper.traverseFields(value.serializer.fields, result, map, currentEntityId, decoderMap);
 					break;
 				}
 
@@ -789,7 +791,7 @@ export const constructorFieldHelper = {
 					const value = field.value as PointerField;
 					const result = `${serializerName}.${value.serializer.name}`;
 
-					constructorFieldHelper.traverseFields(value.serializer.fields, result, map, currentEntityId);
+					constructorFieldHelper.traverseFields(value.serializer.fields, result, map, currentEntityId, decoderMap);
 					break;
 				}
 				case FieldTypeEnum.Array: {
@@ -800,6 +802,7 @@ export const constructorFieldHelper = {
 							const result = `${serializerName}.${innerValue.name}`;
 
 							map[currentEntityId.id] = result;
+							if (decoderMap) decoderMap[currentEntityId.id] = innerValue.decoder;
 							innerValue.prop_id = currentEntityId.id;
 							currentEntityId.id++;
 							break;
@@ -825,6 +828,7 @@ export const constructorFieldHelper = {
 										const result = `${serializerName}.${innerFieldValue.name}`;
 
 										map[currentEntityId.id] = result;
+										if (decoderMap) decoderMap[currentEntityId.id] = innerFieldValue.decoder;
 										innerFieldValue.prop_id = currentEntityId.id;
 										currentEntityId.id++;
 										break;
@@ -837,7 +841,8 @@ export const constructorFieldHelper = {
 								value.serializer.fields,
 								`${serializerName}.${value.serializer.name}`,
 								map,
-								currentEntityId
+								currentEntityId,
+								decoderMap
 							);
 							break;
 						}
@@ -846,6 +851,7 @@ export const constructorFieldHelper = {
 							const result = `${serializerName}.${value.name}`;
 
 							map[currentEntityId.id] = result;
+							if (decoderMap) decoderMap[currentEntityId.id] = value.decoder;
 							value.prop_id = currentEntityId.id;
 							currentEntityId.id++;
 							break;

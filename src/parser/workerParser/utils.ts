@@ -662,6 +662,7 @@ export const initParse = (workerData: WorkerInputData, emitMainQueue: EmitQueue)
 				helper.entityParser.onlyGameRules = entityMode === EntityMode.ONLY_GAME_RULES;
 				if (workerData.parser) {
 					workerData.parser.propIdToName = classInfo.propIdToName;
+					workerData.parser.propIdToDecoder = classInfo.propIdToDecoder;
 					helper.entityParser.directEntities = workerData.parser.entities;
 					helper.entityParser.directPropIdToName = classInfo.propIdToName;
 				}

@@ -13,150 +13,234 @@ import { fileURLToPath } from 'url';
 // Import parsing internals
 import { DemoReader } from '../src/parser/index.js';
 import { EntityMode } from '../src/parser/workerParser/worker.js';
+import type { Decoder } from '../src/parser/workerParser/constructorFields.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.join(__dirname, '..', 'src', 'generated');
 const SNAPSHOT_PATH = path.join(OUTPUT_DIR, 'serializerSnapshot.json');
 const OUTPUT_PATH = path.join(OUTPUT_DIR, 'entityTypes.ts');
 
-// Decoder ID → TypeScript type mapping (matches constructorFields.ts numeric decoder IDs)
-const DECODER_TS_TYPES: Record<string, string> = {
-	BooleanDecoder: 'boolean',
-	ComponentDecoder: 'boolean',
-	StringDecoder: 'string',
-	SignedDecoder: 'number',
-	UnsignedDecoder: 'number',
-	NoscaleDecoder: 'number',
-	QuantalizedFloatDecoder: 'number',
-	FloatCoordDecoder: 'number',
-	FloatSimulationTimeDecoder: 'number',
-	CentityHandleDecoder: 'number',
-	AmmoDecoder: 'number',
-	GameModeRulesDecoder: 'number',
-	BaseDecoder: 'number',
-	Unsigned64Decoder: 'bigint',
-	Fixed64Decoder: 'bigint',
-	VectorNoscaleDecoder: '[number, number, number]',
-	VectorNormalDecoder: '[number, number, number]',
-	VectorFloatCoordDecoder: '[number, number, number]',
-	Qangle3Decoder: '[number, number, number]',
-	QangleVarDecoder: '[number, number, number]',
-	QanglePitchYawDecoder: '[number, number, number]',
-	QanglePresDecoder: '[number, number, number]'
+// Decoder numeric ID → TypeScript type (matches constructorFields.ts D_* constants)
+const DECODER_ID_TO_TS: Record<number, string> = {
+	0: 'number',                    // D_QUANTALIZED_FLOAT
+	1: '[number, number, number]',  // D_VECTOR_NORMAL
+	2: '[number, number, number]',  // D_VECTOR_NOSCALE
+	3: '[number, number, number]',  // D_VECTOR_FLOAT_COORD
+	4: 'bigint',                    // D_UNSIGNED64
+	5: 'number',                    // D_CENTITY_HANDLE
+	6: 'number',                    // D_NOSCALE
+	7: 'boolean',                   // D_BOOLEAN
+	8: 'string',                    // D_STRING
+	9: 'number',                    // D_SIGNED
+	10: 'number',                   // D_UNSIGNED
+	11: 'boolean',                  // D_COMPONENT
+	12: 'number',                   // D_FLOAT_COORD
+	13: 'number',                   // D_FLOAT_SIMULATION_TIME
+	14: 'bigint',                   // D_FIXED64
+	15: '[number, number, number]', // D_QANGLE_PITCH_YAW
+	16: '[number, number, number]', // D_QANGLE3
+	17: '[number, number, number]', // D_QANGLE_VAR
+	18: 'number',                   // D_BASE
+	19: 'number',                   // D_AMMO
+	20: '[number, number, number]', // D_QANGLE_PRES
+	21: 'number',                   // D_GAME_MODE_RULES
 };
 
-type FieldEntry = { propName: string; tsType: string };
-type SerializerData = { name: string; fields: FieldEntry[] };
+function decoderToTsType(decoder: Decoder): string {
+	if (typeof decoder === 'object') return 'number'; // QuantalizedFloatDecoder
+	return DECODER_ID_TO_TS[decoder] ?? 'unknown';
+}
 
-function collectFromDemo(demoPath: string): Map<string, SerializerData> {
+type SnapshotData = {
+	// serializerName → { fieldName (without serializer prefix) → tsType }
+	serializers: Record<string, Record<string, string>>;
+	entities: Record<string, { serializers: string[]; ownFields: Record<string, string> }>;
+};
+
+function collectFromDemo(demoPath: string): SnapshotData {
 	const parser = new DemoReader();
-	const entityMap = new Map<string, SerializerData>();
+	parser.parseDemo(demoPath, { entities: EntityMode.ALL, stream: false });
 
-	parser.parseDemo(demoPath, { entities: EntityMode.ALL });
+	// Shared serializer map: serializerName → { fieldNameWithoutPrefix → tsType }
+	const serializerMap = new Map<string, Map<string, string>>();
+	// Per-entity: className → { serializers used, own fields }
+	const entityMap = new Map<string, { serializers: Set<string>; ownFields: Map<string, string> }>();
 
-	// propIdToName gives us: propId → "ClassName.SubSerializer.fieldName"
-	// We group by top-level class name
-	for (const [propId, fullPath] of Object.entries(parser.propIdToName)) {
+	for (const [propIdStr, fullPath] of Object.entries(parser.propIdToName)) {
+		const propId = Number(propIdStr);
+		const decoder = parser.propIdToDecoder[propId];
+		const tsType = decoder !== undefined ? decoderToTsType(decoder) : 'unknown';
+
 		const dotIdx = fullPath.indexOf('.');
 		if (dotIdx === -1) continue;
+
 		const className = fullPath.substring(0, dotIdx);
+		const suffix = fullPath.substring(dotIdx + 1);
 
 		if (!entityMap.has(className)) {
-			entityMap.set(className, { name: className, fields: [] });
+			entityMap.set(className, { serializers: new Set(), ownFields: new Map() });
+		}
+		const entity = entityMap.get(className)!;
+
+		// Determine if this is a serializer field (suffix has a segment starting with uppercase)
+		const secondDotIdx = suffix.indexOf('.');
+		if (secondDotIdx !== -1) {
+			const firstSegment = suffix.substring(0, secondDotIdx);
+			if (firstSegment[0]! >= 'A' && firstSegment[0]! <= 'Z') {
+				const serializerName = firstSegment;
+				entity.serializers.add(serializerName);
+
+				if (!serializerMap.has(serializerName)) {
+					serializerMap.set(serializerName, new Map());
+				}
+				const fields = serializerMap.get(serializerName)!;
+				// Strip the serializer name prefix — store just the field part
+				const fieldKey = suffix.substring(secondDotIdx + 1);
+				if (!fields.has(fieldKey) || fields.get(fieldKey) === 'unknown') {
+					fields.set(fieldKey, tsType);
+				}
+				continue;
+			}
 		}
 
-		// Find the entity with this className to determine the decoder type
-		// We can't directly get the decoder from propIdToName, so use a default
-		entityMap.get(className)!.fields.push({
-			propName: fullPath,
-			tsType: 'unknown' // Will be refined below
-		});
-	}
-
-	// Now refine types by inspecting actual entity property values
-	for (const [, entity] of parser.entities.entries()) {
-		if (!entity) continue;
-		const className = entity.className;
-		const serializer = entityMap.get(className);
-		if (!serializer) continue;
-
-		for (const field of serializer.fields) {
-			if (field.tsType !== 'unknown') continue;
-			const value = entity.properties[field.propName as keyof typeof entity.properties];
-			if (value === undefined) continue;
-			field.tsType = inferTypeFromValue(value);
+		// Own field
+		if (!entity.ownFields.has(suffix) || entity.ownFields.get(suffix) === 'unknown') {
+			entity.ownFields.set(suffix, tsType);
 		}
 	}
 
-	// Any remaining 'unknown' fields get 'unknown'
-	return entityMap;
+	// Convert to serializable format
+	const result: SnapshotData = { serializers: {}, entities: {} };
+	for (const [name, fields] of serializerMap) {
+		result.serializers[name] = Object.fromEntries([...fields.entries()].sort((a, b) => a[0].localeCompare(b[0])));
+	}
+	for (const [className, data] of entityMap) {
+		result.entities[className] = {
+			serializers: [...data.serializers].sort(),
+			ownFields: Object.fromEntries([...data.ownFields.entries()].sort((a, b) => a[0].localeCompare(b[0])))
+		};
+	}
+	return result;
 }
 
-function inferTypeFromValue(value: any): string {
-	if (typeof value === 'boolean') return 'boolean';
-	if (typeof value === 'number') return 'number';
-	if (typeof value === 'string') return 'string';
-	if (typeof value === 'bigint') return 'bigint';
-	if (Array.isArray(value)) {
-		if (value.length === 3 && typeof value[0] === 'number') return '[number, number, number]';
-		return 'unknown[]';
-	}
-	return 'unknown';
-}
-
-function saveSnapshot(entityMap: Map<string, SerializerData>) {
-	const data: Record<string, SerializerData> = {};
-	for (const [key, val] of entityMap) {
-		data[key] = val;
-	}
+function saveSnapshot(data: SnapshotData) {
 	fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 	fs.writeFileSync(SNAPSHOT_PATH, JSON.stringify(data, null, 2));
-	console.log(`Saved snapshot: ${SNAPSHOT_PATH} (${Object.keys(data).length} serializers)`);
+	console.log(`Saved snapshot: ${SNAPSHOT_PATH} (${Object.keys(data.entities).length} entities, ${Object.keys(data.serializers).length} serializers)`);
 }
 
-function loadSnapshot(): Map<string, SerializerData> {
-	const data = JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf-8')) as Record<string, SerializerData>;
-	return new Map(Object.entries(data));
+function loadSnapshot(): SnapshotData {
+	return JSON.parse(fs.readFileSync(SNAPSHOT_PATH, 'utf-8')) as SnapshotData;
 }
 
-function generateTypeScript(entityMap: Map<string, SerializerData>, demoName: string): string {
+function generateTypeScript(data: SnapshotData, demoName: string): string {
 	const lines: string[] = [];
 	lines.push('// AUTO-GENERATED - DO NOT EDIT');
 	lines.push(`// Generated from demo: ${demoName} on ${new Date().toISOString().split('T')[0]}`);
 	lines.push('');
 
-	// Sort serializers by name
-	const sorted = [...entityMap.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+	// Utility type
+	lines.push('/** Prefixes all keys of T with "P." */');
+	lines.push('type Prefixed<P extends string, T> = {');
+	lines.push('\treadonly [K in keyof T as K extends string ? `${P}.${K}` : never]: T[K];');
+	lines.push('};');
+	lines.push('');
 
-	for (const [className, serializer] of sorted) {
-		const interfaceName = `I${className}`;
-		lines.push(`export interface ${interfaceName} {`);
-
-		// Deduplicate and sort fields
-		const seen = new Set<string>();
-		const uniqueFields = serializer.fields.filter(f => {
-			if (seen.has(f.propName)) return false;
-			seen.add(f.propName);
-			return true;
-		}).sort((a, b) => a.propName.localeCompare(b.propName));
-
-		for (const field of uniqueFields) {
-			lines.push(`\treadonly "${field.propName}"?: ${field.tsType};`);
+	// Shared serializer interfaces — field keys WITHOUT serializer prefix
+	const sortedSerializers = Object.entries(data.serializers).sort((a, b) => a[0].localeCompare(b[0]));
+	for (const [serName, fields] of sortedSerializers) {
+		lines.push(`interface _${serName} {`);
+		const sortedFields = Object.entries(fields).sort((a, b) => a[0].localeCompare(b[0]));
+		for (const [fieldKey, tsType] of sortedFields) {
+			lines.push(`\treadonly "${fieldKey}"?: ${tsType};`);
 		}
 		lines.push('}');
 		lines.push('');
 	}
 
-	// Generate EntityTypeMap
+	// Sort entities
+	const sortedEntities = Object.entries(data.entities).sort((a, b) => a[0].localeCompare(b[0]));
+
+	// Group entities with identical own-field sets to share interfaces
+	const ownFieldGroups = new Map<string, string[]>(); // hash → [classNames]
+	for (const [className, entityData] of sortedEntities) {
+		const hash = JSON.stringify(entityData.ownFields);
+		if (!ownFieldGroups.has(hash)) ownFieldGroups.set(hash, []);
+		ownFieldGroups.get(hash)!.push(className);
+	}
+
+	// For groups with >1 entity, use the first entity's name as the shared interface name
+	const classToOwnInterface = new Map<string, string>(); // className → interface name
+	const emittedOwnInterfaces = new Set<string>();
+
+	for (const [hash, classNames] of ownFieldGroups) {
+		const ownFields = JSON.parse(hash) as Record<string, string>;
+		if (Object.keys(ownFields).length === 0) continue;
+
+		if (classNames.length > 1) {
+			// Shared own-field interface — name it after first class in group
+			const sharedName = `_${classNames[0]}Own`;
+			for (const cn of classNames) {
+				classToOwnInterface.set(cn, sharedName);
+			}
+			if (!emittedOwnInterfaces.has(sharedName)) {
+				lines.push(`interface ${sharedName} {`);
+				const sortedOwn = Object.entries(ownFields).sort((a, b) => a[0].localeCompare(b[0]));
+				for (const [fieldName, tsType] of sortedOwn) {
+					lines.push(`\treadonly "${fieldName}"?: ${tsType};`);
+				}
+				lines.push('}');
+				lines.push('');
+				emittedOwnInterfaces.add(sharedName);
+			}
+		} else {
+			const cn = classNames[0]!;
+			const ifaceName = `_${cn}Own`;
+			classToOwnInterface.set(cn, ifaceName);
+			lines.push(`interface ${ifaceName} {`);
+			const sortedOwn = Object.entries(ownFields).sort((a, b) => a[0].localeCompare(b[0]));
+			for (const [fieldName, tsType] of sortedOwn) {
+				lines.push(`\treadonly "${fieldName}"?: ${tsType};`);
+			}
+			lines.push('}');
+			lines.push('');
+		}
+	}
+
+	// Entity type aliases — use nested Prefixed for serializers
+	for (const [className, entityData] of sortedEntities) {
+		const parts: string[] = [];
+		for (const ser of entityData.serializers) {
+			parts.push(`Prefixed<"${ser}", _${ser}>`);
+		}
+		const ownIface = classToOwnInterface.get(className);
+		if (ownIface) {
+			parts.push(ownIface);
+		}
+
+		const interfaceName = `I${className}`;
+		if (parts.length === 0) {
+			lines.push(`export interface ${interfaceName} {}`);
+		} else if (parts.length === 1) {
+			lines.push(`export type ${interfaceName} = Prefixed<"${className}", ${parts[0]}>;`);
+		} else {
+			lines.push(`export type ${interfaceName} = Prefixed<"${className}",`);
+			lines.push(`\t${parts.join(' &\n\t')}`);
+			lines.push('>;');
+		}
+		lines.push('');
+	}
+
+	// EntityTypeMap
 	lines.push('/** Maps entity className to its typed properties interface */');
 	lines.push('export interface EntityTypeMap {');
-	for (const [className] of sorted) {
+	for (const [className] of sortedEntities) {
 		lines.push(`\t${className}: I${className};`);
 	}
 	lines.push('}');
 	lines.push('');
 
-	// Base entity type (used at runtime, compatible with all entity classes)
+	// BaseEntity
 	lines.push('/** Base entity shape used at runtime */');
 	lines.push('export interface BaseEntity {');
 	lines.push('\tclassName: string;');
@@ -166,31 +250,27 @@ function generateTypeScript(entityMap: Map<string, SerializerData>, demoName: st
 	lines.push('}');
 	lines.push('');
 
-	// Generate discriminated union type
+	// TypedEntity
+	lines.push('type _TypedEntity<K extends keyof EntityTypeMap> = { className: K; classId: number; entityType: number; properties: Partial<EntityTypeMap[K]> };');
+	lines.push('');
 	lines.push('/** Discriminated union of all known entity types */');
-	lines.push('export type TypedEntity =');
-	for (const [className] of sorted) {
-		lines.push(`\t| { className: "${className}"; classId: number; entityType: number; properties: Partial<I${className}> }`);
-	}
-	lines.push('\t| BaseEntity;');
+	lines.push('export type TypedEntity = _TypedEntity<keyof EntityTypeMap> | BaseEntity;');
 	lines.push('');
 
-	// Known class names
+	// Helper types
 	lines.push('/** All known entity class names */');
 	lines.push('export type KnownClassName = keyof EntityTypeMap;');
 	lines.push('');
-
-	// Helper type for getting entity by class
 	lines.push('/** Get typed properties for a known entity class name */');
 	lines.push('export type EntityProperties<T extends keyof EntityTypeMap> = Partial<EntityTypeMap[T]>;');
 	lines.push('');
 
-	// Typed entity accessor helper
+	// isEntityClass
 	lines.push('/** Narrow a BaseEntity to a specific typed entity */');
 	lines.push('export function isEntityClass<T extends KnownClassName>(');
 	lines.push('\tentity: BaseEntity | undefined,');
 	lines.push('\tclassName: T');
-	lines.push('): entity is { className: T; classId: number; entityType: number; properties: Partial<EntityTypeMap[T]> } {');
+	lines.push('): entity is _TypedEntity<T> {');
 	lines.push('\treturn entity?.className === className;');
 	lines.push('}');
 	lines.push('');
@@ -206,24 +286,24 @@ const useSnapshot = args.includes('--snapshot');
 if (demoIdx !== -1 && args[demoIdx + 1]) {
 	const demoPath = args[demoIdx + 1]!;
 	console.log(`Parsing demo: ${demoPath}...`);
-	const entityMap = collectFromDemo(demoPath);
-	saveSnapshot(entityMap);
+	const data = collectFromDemo(demoPath);
+	saveSnapshot(data);
 
-	const output = generateTypeScript(entityMap, path.basename(demoPath));
+	const output = generateTypeScript(data, path.basename(demoPath));
 	fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 	fs.writeFileSync(OUTPUT_PATH, output);
-	console.log(`Generated: ${OUTPUT_PATH} (${entityMap.size} interfaces)`);
+	console.log(`Generated: ${OUTPUT_PATH} (${Object.keys(data.entities).length} entities, ${Object.keys(data.serializers).length} shared serializers)`);
 } else if (useSnapshot) {
 	if (!fs.existsSync(SNAPSHOT_PATH)) {
 		console.error('No snapshot found. Run with --demo <path> first.');
 		process.exit(1);
 	}
 	console.log('Loading snapshot...');
-	const entityMap = loadSnapshot();
-	const output = generateTypeScript(entityMap, 'snapshot');
+	const data = loadSnapshot();
+	const output = generateTypeScript(data, 'snapshot');
 	fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 	fs.writeFileSync(OUTPUT_PATH, output);
-	console.log(`Generated: ${OUTPUT_PATH} (${entityMap.size} interfaces)`);
+	console.log(`Generated: ${OUTPUT_PATH} (${Object.keys(data.entities).length} entities, ${Object.keys(data.serializers).length} shared serializers)`);
 } else {
 	console.error('Usage:');
 	console.error('  bun scripts/generate-entity-types.ts --demo <path-to-demo>');

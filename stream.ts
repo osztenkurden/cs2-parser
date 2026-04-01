@@ -59,7 +59,7 @@ parser.on('end', () => {
 	}
 });
 parser.on('header', console.log);
-parser.on('svc_ServerInfo', console.log);
+// parser.on('svc_ServerInfo', console.log);
 parser.on('debug', console.log);
 if (mode === 'STREAM') {
 	await parser.parseDemo(createReadStream(demoPath), { entities: EntityMode.ALL });

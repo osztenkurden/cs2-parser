@@ -8,6 +8,7 @@ import { CMsgPlayerInfo } from '../ts-proto/networkbasetypes.js';
 import { type Readable } from 'stream';
 import { TypedEventEmitter } from './descriptors/typedEmitter.js';
 import { EntityMode, type EmitQueue, type OutputEvents } from './workerParser/worker.js';
+import type { Decoder } from './workerParser/constructorFields.js';
 import { singleThreadParse, initParse } from './workerParser/utils.js';
 import { Player } from '../helpers/player.js';
 import { Team } from '../helpers/team.js';
@@ -184,6 +185,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 	};
 
 	propIdToName: Record<number, string> = {};
+	propIdToDecoder: Record<number, Decoder> = {};
 
 	private _emitQueue: EmitQueue = queue => {
 		if (this._hasEnded) return;
