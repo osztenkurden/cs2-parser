@@ -83,11 +83,10 @@ parser.parseDemo(buffer, { entities: EntityMode.ALL });
 | Input | Returns | Memory |
 | --- | --- | --- |
 | `string` path | `Promise<void>` | low |
-| `string` path + `stream: false` | `void` | high |
+| `string` path + `stream: false` | `Promise<void>` | low |
 | `Readable` stream | `Promise<void>` | low |
-| `Buffer` | `void` | high |
+| `Buffer` | `Promise<void>` | high |
 
-File paths stream by default — the event loop stays alive so HTTP/WS connections won't drop. Pass `stream: false` to load into memory for ~20% faster sync parsing.
 
 ## Players
 
