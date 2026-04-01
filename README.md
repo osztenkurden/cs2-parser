@@ -57,16 +57,16 @@ Returns `null` if the file header cannot be read. Only reads the first 4 KB of t
 A single method with overloads for all input types. File paths stream by default.
 
 ```ts
-// File path (streams by default — non-blocking, low memory)
+// File path (streams by default )
 await parser.parseDemo('demo.dem', { entities: EntityMode.ALL });
 
-// File path sync (loads into memory, blocks event loop)
+// File path sync (loads chunks consecutively into memory)
 parser.parseDemo('demo.dem', { entities: EntityMode.ALL, stream: false });
 
 // Readable stream
 await parser.parseDemo(createReadStream('demo.dem'), { entities: EntityMode.ALL });
 
-// Pre-loaded buffer
+// Pre-loaded buffer (big memory usage)
 parser.parseDemo(buffer, { entities: EntityMode.ALL });
 ```
 
@@ -80,12 +80,12 @@ parser.parseDemo(buffer, { entities: EntityMode.ALL });
 
 `ONLY_GAME_RULES` parses the entity bitstream but only stores `CCSGameRulesProxy` properties. This enables synthetic `round_start`/`round_end` events without populating the full entities array.
 
-| Input | Returns | Blocking | Memory |
-| --- | --- | --- | --- |
-| `string` path | `Promise<void>` | no | low |
-| `string` path + `stream: false` | `void` | yes | high |
-| `Readable` stream | `Promise<void>` | no | low |
-| `Buffer` | `void` | yes | high |
+| Input | Returns | Memory |
+| --- | --- | --- |
+| `string` path | `Promise<void>` | low |
+| `string` path + `stream: false` | `void` | high |
+| `Readable` stream | `Promise<void>` | low |
+| `Buffer` | `void` | high |
 
 File paths stream by default — the event loop stays alive so HTTP/WS connections won't drop. Pass `stream: false` to load into memory for ~20% faster sync parsing.
 
@@ -245,26 +245,28 @@ bun scripts/generate-protos.ts
 
 ## Performance
 
-Tested on a 583 MB demo file (231K ticks):
+CPU: Apple M1
 
-### Entity Mode Comparison (streaming)
+Demo: `demo.dem` (318 MB, 136,812 ticks)
 
-| Mode | Time | RSS | Heap | Entities |
+## Entity Mode Comparison
+
+| Mode | Throughput | Time | RSS | Heap | Entities |
+| --- | --- | --- | --- | --- | --- |
+| `EntityMode.NONE` | 401.9 MB/s | 0.8s | 136MB | 22MB | 0 |
+| `EntityMode.ONLY_GAME_RULES` | 131.7 MB/s | 2.4s | 165MB | 39MB | 1 |
+| `EntityMode.ALL` | 107.9 MB/s | 2.9s | 183MB | 15MB | 248 |
+
+## Parse Method Comparison (EntityMode.ALL)
+
+| Method | Throughput | Time | RSS | Heap |
 | --- | --- | --- | --- | --- |
-| `EntityMode.NONE` | 2.8s | 255MB | 34MB | 0 |
-| `EntityMode.ONLY_GAME_RULES` | 8.4s | 284MB | 26MB | 1 |
-| `EntityMode.ALL` | 10.5s | 275MB | 26MB | 622 |
+| `parseDemo(path)` | 110.3 MB/s | 2.9s | 178MB | 15MB |
+| `parseDemo(path, {stream: false})` | 109.1 MB/s | 2.9s | 213MB | 56MB |
+| `parseDemo(buffer)` | 106.2 MB/s | 3.0s | 830MB | 1019MB |
+| `parseDemo(stream)` | 108.9 MB/s | 2.9s | 183MB | 10MB |
 
-### Parse Method Comparison (EntityMode.ALL)
-
-| Method | Time | RSS | Heap | Blocking |
-| --- | --- | --- | --- | --- |
-| `parseDemo(path)` | 10.3s | 290MB | 26MB | no |
-| `parseDemo(path, {stream: false})` | 8.6s | 3964MB | 1732MB | yes |
-| `parseDemo(buffer)` | 8.8s | 3965MB | 1732MB | yes |
-| `parseDemo(stream)` | 10.2s | 281MB | 20MB | no |
-
-File paths stream by default (non-blocking, low memory). Pass `stream: false` to load into memory for ~20% faster sync parsing at the cost of ~14x more memory.
+File paths stream by default.
 
 ## Acknowledgements
 

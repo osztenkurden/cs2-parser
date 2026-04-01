@@ -87,25 +87,37 @@ export class ParseSession {
 
 	/** Run synchronous parse to completion. */
 	runSync(): void {
+		try {
+			this.runFrameLoop();
+		} finally {
+			this.closeFd();
+		}
+		this.flush();
+	}
+
+	/** Run non-blocking parse to completion, yielding to the event loop periodically. */
+	async runAsync(): Promise<void> {
 		let forceBreak = false;
 		this.parser?.on('cancel', () => {
 			forceBreak = true;
 		});
 		let frameCount = 0;
+		let lastYieldTime = Date.now();
 
 		try {
 			while (true) {
 				if (forceBreak) break;
 				try {
 					if (++frameCount % 5000 === 0) {
-						this.enqueueEvent(
-							'progress',
-							this.fd !== null
-								? this.fileOffset / this.fileSize
-								: this.bytebuffer.offset / this.bytebuffer.limit
-						);
+						this.enqueueEvent('progress', this.getProgress());
 					}
 					if (!this.readFrame()) break;
+
+					const now = Date.now();
+					if (now - lastYieldTime >= 16) {
+						lastYieldTime = now;
+						await new Promise<void>(resolve => setTimeout(resolve, 0));
+					}
 				} catch (e) {
 					if (e instanceof RangeError) {
 						this.enqueueEvent('end', { incomplete: true });
@@ -119,13 +131,50 @@ export class ParseSession {
 				}
 			}
 		} finally {
-			if (this.fd !== null) {
-				fs.closeSync(this.fd);
-				this.fd = null;
+			this.closeFd();
+		}
+		this.flush();
+	}
+
+	private runFrameLoop(): void {
+		let forceBreak = false;
+		this.parser?.on('cancel', () => {
+			forceBreak = true;
+		});
+		let frameCount = 0;
+
+		while (true) {
+			if (forceBreak) break;
+			try {
+				if (++frameCount % 5000 === 0) {
+					this.enqueueEvent('progress', this.getProgress());
+				}
+				if (!this.readFrame()) break;
+			} catch (e) {
+				if (e instanceof RangeError) {
+					this.enqueueEvent('end', { incomplete: true });
+				} else {
+					const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
+					this.enqueueEvent('debug', JSON.stringify(this.dumpState()));
+					this.enqueueEvent('error', { error: e } as any);
+					this.enqueueEvent('end', { error, incomplete: false });
+				}
+				break;
 			}
 		}
+	}
 
-		this.flush();
+	private getProgress(): number {
+		return this.fd !== null
+			? this.fileOffset / this.fileSize
+			: this.bytebuffer.offset / this.bytebuffer.limit;
+	}
+
+	private closeFd(): void {
+		if (this.fd !== null) {
+			fs.closeSync(this.fd);
+			this.fd = null;
+		}
 	}
 
 	/** Push a stream chunk for incremental parsing. */

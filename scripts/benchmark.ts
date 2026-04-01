@@ -16,7 +16,6 @@ type Result = {
 	ms: number;
 	rss: string;
 	heap: string;
-	blocking: string;
 	entities: number;
 	tick: number;
 };
@@ -29,12 +28,12 @@ function mbPerSec(result: Result): string {
 	return ((sizeBytes / 1024 / 1024) / (result.ms / 1000)).toFixed(1) + ' MB/s';
 }
 
-function run(label: string, method: string, entityMode: string, blocking: boolean): Result {
+function run(label: string, method: string, entityMode: string): Result {
 	const result = execSync(
 		`bun ${RUNNER} ${JSON.stringify(demoPath)} ${method} ${entityMode}`,
 		{ cwd: ROOT, timeout: 300000, encoding: 'utf-8' }
 	).trim();
-	return { label, blocking: blocking ? 'yes' : 'no', ...JSON.parse(result) };
+	return { label, ...JSON.parse(result) };
 }
 
 console.log(`Benchmarking: ${path.basename(demoPath)} (${sizeMB} MB)\n`);
@@ -51,7 +50,7 @@ const modeBenchmarks: { label: string; entityMode: string }[] = [
 const modeResults: Result[] = [];
 for (const b of modeBenchmarks) {
 	process.stdout.write(`  ${b.label}...`);
-	const r = run(b.label, 'path-stream', b.entityMode, false);
+	const r = run(b.label, 'path-stream', b.entityMode,);
 	modeResults.push(r);
 	console.log(` ${mbPerSec(r)} | ${r.time} | ${r.rss} RSS | ${r.heap} heap | ${r.entities} entities`);
 }
@@ -59,17 +58,17 @@ for (const b of modeBenchmarks) {
 // --- Parse Method Comparison (all with EntityMode.ALL) ---
 console.log('\n=== Parse Method Comparison (EntityMode.ALL) ===');
 
-const methodBenchmarks: { label: string; method: string; blocking: boolean }[] = [
-	{ label: '`parseDemo(path)`', method: 'path-stream', blocking: false },
-	{ label: '`parseDemo(path, {stream: false})`', method: 'path-sync', blocking: true },
-	{ label: '`parseDemo(buffer)`', method: 'buffer', blocking: true },
-	{ label: '`parseDemo(stream)`', method: 'stream', blocking: false }
+const methodBenchmarks: { label: string; method: string; }[] = [
+	{ label: '`parseDemo(path)`', method: 'path-stream', },
+	{ label: '`parseDemo(path, {stream: false})`', method: 'path-sync', },
+	{ label: '`parseDemo(buffer)`', method: 'buffer',  },
+	{ label: '`parseDemo(stream)`', method: 'stream', }
 ];
 
 const methodResults: Result[] = [];
 for (const b of methodBenchmarks) {
 	process.stdout.write(`  ${b.label}...`);
-	const r = run(b.label, b.method, 'ALL', b.blocking);
+	const r = run(b.label, b.method, 'ALL',);
 	methodResults.push(r);
 	console.log(` ${mbPerSec(r)} | ${r.time} | ${r.rss} RSS | ${r.heap} heap`);
 }
@@ -107,9 +106,9 @@ const lines = [
 	'',
 	'## Parse Method Comparison (EntityMode.ALL)',
 	'',
-	'| Method | Throughput | Time | RSS | Heap | Blocking |',
-	'| --- | --- | --- | --- | --- | --- |',
-	...methodResults.map(r => `| ${r.label} | ${mbPerSec(r)} | ${r.time} | ${r.rss} | ${r.heap} | ${r.blocking} |`),
+	'| Method | Throughput | Time | RSS | Heap |',
+	'| --- | --- | --- | --- | --- |',
+	...methodResults.map(r => `| ${r.label} | ${mbPerSec(r)} | ${r.time} | ${r.rss} | ${r.heap} |`),
 	''
 ];
 

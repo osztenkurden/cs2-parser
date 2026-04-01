@@ -196,22 +196,22 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 		queue.length = 0;
 	};
 
-	/** Core sync parse from a Buffer. */
-	private _parseSync(buffer: Buffer, opts: { entities?: EntityMode } = {}) {
+	/** Non-blocking parse from a pre-loaded Buffer. */
+	private async _parseBuffer(buffer: Buffer, opts: { entities?: EntityMode } = {}) {
 		const entityMode = opts.entities ?? EntityMode.NONE;
 		this._directWriteMode = true;
 		this.gameEvents.entityMode = entityMode;
-		new ParseSession(buffer, entityMode, this._emitQueue, this).runSync();
+		await new ParseSession(buffer, entityMode, this._emitQueue, this).runAsync();
 		this._directWriteMode = false;
 		this._hasEnded = true;
 	}
 
-	/** Sync parse from a file path using chunked reads (low memory). */
-	private _parseSyncFile(filePath: string, opts: { entities?: EntityMode } = {}) {
+	/** Non-blocking parse from a file path using chunked reads (low memory). */
+	private async _parseFile(filePath: string, opts: { entities?: EntityMode } = {}) {
 		const entityMode = opts.entities ?? EntityMode.NONE;
 		this._directWriteMode = true;
 		this.gameEvents.entityMode = entityMode;
-		ParseSession.fromFile(filePath, entityMode, this._emitQueue, this).runSync();
+		await ParseSession.fromFile(filePath, entityMode, this._emitQueue, this).runAsync();
 		this._directWriteMode = false;
 		this._hasEnded = true;
 	}
@@ -268,7 +268,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 				finish();
 				const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
 				this.emit('end', { error, incomplete: false });
-				reject(error);
+				resolve();
 			}
 		};
 
@@ -276,7 +276,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 			if (finished) return;
 			finish();
 			this.emit('end', { error: err, incomplete: true });
-			reject(err);
+			resolve();
 		};
 
 		const onEnd = () => {
@@ -313,37 +313,35 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 	 * // File path (streams by default — non-blocking, low memory)
 	 * await parser.parseDemo('demo.dem', { entities: EntityMode.ALL });
 	 *
-	 * // File path sync (loads into memory, blocks event loop)
-	 * parser.parseDemo('demo.dem', { entities: EntityMode.ALL, stream: false });
+	 * // File path with chunked reads (non-blocking, low memory)
+	 * await parser.parseDemo('demo.dem', { entities: EntityMode.ALL, stream: false });
 	 *
 	 * // Readable stream
 	 * await parser.parseDemo(createReadStream('demo.dem'), { entities: EntityMode.ALL });
 	 *
-	 * // Pre-loaded buffer
-	 * parser.parseDemo(buffer, { entities: EntityMode.ALL });
+	 * // Pre-loaded buffer (non-blocking)
+	 * await parser.parseDemo(buffer, { entities: EntityMode.ALL });
 	 */
 	parseDemo(source: Readable, opts?: { entities?: EntityMode }): Promise<void>;
-	parseDemo(source: string, opts: { entities?: EntityMode; stream: false }): void;
+	parseDemo(source: string, opts: { entities?: EntityMode; stream: false }): Promise<void>;
 	parseDemo(source: string, opts?: { entities?: EntityMode; stream?: true }): Promise<void>;
-	parseDemo(source: Buffer, opts?: { entities?: EntityMode }): void;
+	parseDemo(source: Buffer, opts?: { entities?: EntityMode }): Promise<void>;
 	parseDemo(
 		source: string | Buffer | Readable,
 		opts: { entities?: EntityMode; stream?: boolean } = {}
-	): void | Promise<void> {
+	): Promise<void> {
 		if (this._hasEnded) throw 'Demo has already been parsed';
 		this._parseStartTime = process.hrtime.bigint();
 
 		if (typeof source === 'string') {
 			if (opts.stream === false) {
-				this._parseSyncFile(source, opts);
-				return;
+				return this._parseFile(source, opts);
 			}
 			return this._parseStream(fs.createReadStream(source), opts);
 		}
 
 		if (Buffer.isBuffer(source)) {
-			this._parseSync(source, opts);
-			return;
+			return this._parseBuffer(source, opts);
 		}
 
 		return this._parseStream(source, opts);
@@ -353,7 +351,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 		if (this._hasEnded) throw 'Demo has already been parsed';
 
 		this._hasEnded = true;
-		this._stream?.destroy();
+		this._stream?.destroy(new Error("Stream canceled"));
 		this._stream = null;
 		this.emit('cancel');
 		this.emit('end', { incomplete: true });

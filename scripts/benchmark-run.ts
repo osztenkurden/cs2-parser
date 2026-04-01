@@ -16,10 +16,10 @@ switch (method) {
 		await p.parseDemo(demoPath, { entities: entityMode });
 		break;
 	case 'path-sync':
-		p.parseDemo(demoPath, { entities: entityMode, stream: false });
+		await p.parseDemo(demoPath, { entities: entityMode, stream: false });
 		break;
 	case 'buffer':
-		p.parseDemo(fs.readFileSync(demoPath), { entities: entityMode });
+		await p.parseDemo(fs.readFileSync(demoPath), { entities: entityMode });
 		break;
 	case 'stream':
 		await p.parseDemo(fs.createReadStream(demoPath), { entities: entityMode });
