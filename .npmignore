@@ -10,6 +10,7 @@ header.ts
 memory.ts
 test_all.ts
 tester2.js
+*.tgz
 pnpm-workspace.yaml
 kills.ts
 stream_output*.txt
