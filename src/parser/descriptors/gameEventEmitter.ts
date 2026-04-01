@@ -6,7 +6,7 @@ import { TypedEventEmitter } from './typedEmitter.js';
 import type { GameEventsArguments } from './eventTypes.js';
 import type { DemoReader } from './../index.js';
 import { annotateGameEvent } from '../../helpers/eventAnnotation.js';
-import { EntityMode } from '../workerParser/worker.js';
+import { EntityMode } from '../entities/types.js';
 import type { WinRoundReason } from '../../helpers/gameRules.js';
 
 const SYNTHETIC_EVENTS = new Set(['round_start', 'round_end']);

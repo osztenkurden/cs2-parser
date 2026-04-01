@@ -7,9 +7,9 @@ import { type StringTableCreated } from './descriptors/index.js';
 import { CMsgPlayerInfo } from '../ts-proto/networkbasetypes.js';
 import { type Readable } from 'stream';
 import { TypedEventEmitter } from './descriptors/typedEmitter.js';
-import { EntityMode, type EmitQueue, type OutputEvents } from './workerParser/worker.js';
-import type { Decoder } from './workerParser/constructorFields.js';
-import { singleThreadParse, initParse } from './workerParser/utils.js';
+import { EntityMode, type EmitQueue, type OutputEvents } from './entities/types.js';
+import type { Decoder } from './entities/constructorFields.js';
+import { ParseSession } from './entities/parseSession.js';
 import { Player } from '../helpers/player.js';
 import { Team } from '../helpers/team.js';
 import { GameRules } from '../helpers/gameRules.js';
@@ -201,7 +201,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 		const entityMode = opts.entities ?? EntityMode.NONE;
 		this._directWriteMode = true;
 		this.gameEvents.entityMode = entityMode;
-		singleThreadParse({ demo: buffer, entities: entityMode, parser: this }, this._emitQueue);
+		new ParseSession(buffer, entityMode, this._emitQueue, this).runSync();
 		this._directWriteMode = false;
 		this._hasEnded = true;
 	}
@@ -215,12 +215,9 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 
 		const { promise, resolve, reject } = Promise.withResolvers<void>();
 
-		let initialized = false;
+		let session: ParseSession | null = null;
 		let finished = false;
 		let pendingChunks: Buffer[] = [];
-		let bufferHelper: ReturnType<typeof initParse>['bufferHelper'];
-		let packetHandler: ReturnType<typeof initParse>['packetHandler'];
-		let eventQueue: ReturnType<typeof initParse>['eventQueue'];
 
 		const finish = () => {
 			finished = true;
@@ -235,39 +232,28 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 			const totalPending = pendingChunks.reduce((s, c) => s + c.length, 0);
 			if (totalPending < 16) return false;
 
-			const parsed = initParse(
-				{ demo: Buffer.concat(pendingChunks), entities: entityMode, parser: this },
-				this._emitQueue
-			);
-			bufferHelper = parsed.bufferHelper;
-			packetHandler = parsed.packetHandler;
-			eventQueue = parsed.eventQueue;
+			session = new ParseSession(Buffer.concat(pendingChunks), entityMode, this._emitQueue, this);
 			pendingChunks = [];
-			initialized = true;
 			return true;
-		};
-
-		const processFrames = () => {
-			const more = bufferHelper.readAvailableFrames(packetHandler);
-			if (!more) {
-				this._emitQueue(eventQueue, 0, false);
-				finish();
-				resolve();
-			}
 		};
 
 		const onData = (chunk: Buffer) => {
 			if (finished) return;
 
-			if (!initialized) {
+			if (!session) {
 				pendingChunks.push(chunk);
 				if (!tryInit()) return;
 			} else {
-				bufferHelper.pushChunk(chunk);
+				session.pushChunk(chunk);
 			}
 
 			try {
-				processFrames();
+				const more = session!.processFrames();
+				if (!more) {
+					session!.flush();
+					finish();
+					resolve();
+				}
 			} catch (e) {
 				finish();
 				const error = e instanceof Error ? e : new Error(`Exception during parsing: ${e}`);
@@ -285,9 +271,9 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 
 		const onEnd = () => {
 			if (finished) return;
-			if (initialized) {
+			if (session) {
 				try {
-					bufferHelper.readAvailableFrames(packetHandler);
+					session.processFrames();
 				} catch {}
 			}
 			finish();
