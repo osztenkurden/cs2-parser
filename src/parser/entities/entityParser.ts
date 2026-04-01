@@ -2,10 +2,10 @@ import type { CSVCMsg_PacketEntities } from '../../ts-proto/netmessages.js';
 import { BitBuffer } from '../ubitreader.js';
 import type { ClassInfo } from './classInfo.js';
 import { constructorFieldHelper, Decoders, FieldTypeEnum, getInnerExt, type SerializerN } from './constructorFields.js';
-import { generateEnum, type GetEnumType } from './helper.js';
-import type { FieldPath } from './operations.js';
-import { parsePaths } from './paths.js';
-import { type emit } from './worker.js';
+import { generateEnum, type GetEnumType } from './brandedEnum.js';
+import type { FieldPath } from './fieldPathOps.js';
+import { parsePaths } from './fieldPaths.js';
+import { type emit } from './types.js';
 
 const NSERIALBITS = 17;
 
@@ -179,11 +179,6 @@ export class EntityParser {
 		const entityType = this.checkEntityType(classId);
 		const cls = this.classInfo.classes[classId]!;
 
-		// const entity: Entity = {
-		// 	entityId,
-		// 	classId,
-		// 	entityType
-		// };
 		this.enqueueEvent('entityCreated', [entityId, classId, entityType, cls.name]);
 
 		if (entityId > 100000) {

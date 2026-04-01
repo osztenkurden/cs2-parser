@@ -1,4 +1,4 @@
-import { doOp, type FieldPath } from './operations.js';
+import { doOp, type FieldPath } from './fieldPathOps.js';
 import type { EntityParser } from './entityParser.js';
 import type { BitBuffer } from '../ubitreader.js';
 

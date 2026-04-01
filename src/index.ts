@@ -1,5 +1,5 @@
 export { DemoReader } from './parser/index.js';
-export { EntityMode } from './parser/workerParser/worker.js';
+export { EntityMode } from './parser/entities/types.js';
 export { Player } from './helpers/player.js';
 export { PlayerPawn, type Vector } from './helpers/playerPawn.js';
 export { Team, TeamNumber } from './helpers/team.js';

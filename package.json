@@ -1,5 +1,5 @@
 {
-	"version": "0.0.10",
+	"version": "0.0.11",
 	"name": "cs2parser",
 	"type": "module",
 	"repository": {
@@ -35,7 +35,7 @@
 		"generate:entities": "bun scripts/generate-entity-types.ts",
 		"generate:protos": "bun scripts/generate-protos.ts",
 		"generate": "bun scripts/generate-protos.ts && bun scripts/generate-entity-types.ts --snapshot",
-		"benchmark": "bun scripts/benchmark.ts"
+		"benchmark": "bun --expose-gc scripts/benchmark.ts"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.3.11",

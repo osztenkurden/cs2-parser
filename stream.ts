@@ -1,11 +1,20 @@
-import { createReadStream } from 'fs';
+import { createReadStream, readFileSync } from 'fs';
 import { DemoReader, EntityMode } from './src/index.js';
 
-const mode = 'STREAM' as 'STREAM' | 'MAIN' | 'ASYNC';
+const MODES = ['path-stream', 'path-chunked', 'buffer', 'stream'] as const;
+type Mode = (typeof MODES)[number];
+
+const mode = process.argv[2] as Mode | undefined;
+const demoPath = process.argv[3];
+
+if (!mode || !MODES.includes(mode) || !demoPath) {
+	console.error(`Usage: bun stream.ts <${MODES.join('|')}> <path-to-demo>`);
+	process.exit(1);
+}
+
+const cancelAfter = process.argv[4] ? parseInt(process.argv[4]) : false;
+
 const parser = new DemoReader();
-const demoPath =
-	process.argv[2] ??
-	`C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\csgo\\replays\\match730_003809737891798581468_1778215536_388.dem`; // 'E:\\Repositories\\demofile-net-main\\demos\\14140.dem';
 
 // Game events are available with EntityMode.ALL or EntityMode.ONLY_GAME_RULES
 parser.gameEvents.on('player_death', event => {
@@ -61,10 +70,22 @@ parser.on('end', () => {
 parser.on('header', console.log);
 // parser.on('svc_ServerInfo', console.log);
 parser.on('debug', console.log);
-if (mode === 'STREAM') {
-	await parser.parseDemo(createReadStream(demoPath), { entities: EntityMode.ALL });
-} else if (mode === 'MAIN') {
-	parser.parseDemo(demoPath, { entities: EntityMode.ALL });
-} else if (mode === 'ASYNC') {
-	await parser.parseDemo(demoPath, { entities: EntityMode.ALL, stream: true });
+if(cancelAfter !== false){
+	setTimeout(() => {
+		parser.cancel();
+	}, cancelAfter)
+}
+switch (mode) {
+	case 'path-stream':
+		await parser.parseDemo(demoPath, { entities: EntityMode.ALL });
+		break;
+	case 'path-chunked':
+		await parser.parseDemo(demoPath, { entities: EntityMode.ALL, stream: false });
+		break;
+	case 'buffer':
+		await parser.parseDemo(readFileSync(demoPath), { entities: EntityMode.ALL });
+		break;
+	case 'stream':
+		await parser.parseDemo(createReadStream(demoPath), { entities: EntityMode.ALL });
+		break;
 }

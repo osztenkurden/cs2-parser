@@ -114,10 +114,6 @@ export const parseClassInfo = (sendTables: CDemoSendTables, cDemoClassInfo: CDem
 			const field = fields[fieldIndex];
 			if (!field) continue;
 
-			if (serializerName === 'CBodyComponentBaseAnimGraph' && i == 53) {
-				// console.log('UMC', field.varName, field);
-			}
-
 			if (field.fieldEnumType === null) {
 				field.fieldEnumType = constructorFieldHelper.createField(field, map);
 			}
@@ -128,10 +124,6 @@ export const parseClassInfo = (sendTables: CDemoSendTables, cDemoClassInfo: CDem
 				fieldsForThisSerializer[i] = fieldType.clone();
 			}
 
-			if (fieldType._getName() === 'm_OwnerOnlyPredNetFloatVariables') {
-				// console.log(fieldType, serializerName, i);
-				// throw 'EEEE';
-			}
 		}
 
 		const serializerValue: SerializerN = {

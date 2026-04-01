@@ -1,47 +1,6 @@
 import type { BitBuffer } from '../ubitreader.js';
-import { generateEnum, type GetEnumType } from './helper.js';
-import type { FieldPath } from './operations.js';
-import { decodeQfloat, getQuantalizedFloat, qfMapper } from './utils.js';
-
-// const PLAYER_ENTITY_HANDLE_MISSING = 2047;
-// const SPECTATOR_TEAM_NUM = 1;
-// const BUTTONS_BASEID = 100000;
-// const NORMAL_PROP_BASEID = 1000;
-// const WEAPON_SKIN_NAME = 420420420;
-// const WEAPON_ORIGINGAL_OWNER_ID = 6942000;
-const MY_WEAPONS_OFFSET = 500000;
-// const GRENADE_AMMO_ID = 1111111;
-// const INVENTORY_ID = 100000000;
-// const IS_ALIVE_ID = 100000001;
-// const GAME_TIME_ID = 100000002;
-// const ENTITY_ID_ID = 100000003;
-// const VELOCITY_X_ID = 100000004;
-// const VELOCITY_Y_ID = 100000005;
-// const VELOCITY_Z_ID = 100000006;
-// const VELOCITY_ID = 100000007;
-// const USERID_ID = 100000008;
-// const AGENT_SKIN_ID = 100000009;
-// const WEAPON_NAME_ID = 100000010;
-// const YAW_ID = 100000111;
-// const PITCH_ID = 100000012;
-// const TICK_ID = 100000013;
-// const STEAMID_ID = 100000014;
-// const NAME_ID = 100000015;
-// const PLAYER_X_ID = 100000016;
-// const PLAYER_Y_ID = 100000017;
-// const PLAYER_Z_ID = 100000018;
-// const WEAPON_STICKERS_ID = 100000019;
-// const INVENTORY_AS_IDS_ID = 100000020;
-
-const WEAPON_SKIN_ID = 10000000;
-// const WEAPON_PAINT_SEED = 10000001;
-// const WEAPON_FLOAT = 10000002;
-const ITEM_PURCHASE_COUNT = 200000000;
-const ITEM_PURCHASE_DEF_IDX = 300000000;
-const ITEM_PURCHASE_COST = 400000000;
-const ITEM_PURCHASE_HANDLE = 500000000;
-const ITEM_PURCHASE_NEW_DEF_IDX = 600000000;
-const FLATTENED_VEC_MAX_LEN = 100000;
+import { generateEnum, type GetEnumType } from './brandedEnum.js';
+import { decodeQfloat, getQuantalizedFloat, qfMapper } from './quantizedFloat.js';
 type FieldType = {
 	baseType: string;
 	genericType: FieldType | null;
@@ -50,7 +9,7 @@ type FieldType = {
 	elementType: FieldType | null;
 };
 
-export const fieldTypeMap: Record<string, FieldType> = {};
+const fieldTypeMap: Record<string, FieldType> = {};
 
 const isPointerFromName = (name: string) => {
 	switch (name) {
@@ -315,7 +274,7 @@ type ValueField = {
 	name: string;
 	prop_id: number;
 };
-export const FieldTypeName = {
+const FieldTypeName = {
 	[FieldTypeEnum.Array]: 'Array',
 	[FieldTypeEnum.None]: 'None',
 	[FieldTypeEnum.Value]: 'Value',
@@ -416,7 +375,7 @@ export class Field<const T extends FieldTypeEnum = FieldTypeEnum> {
 	}
 }
 
-export const getNameExt = (field: Field): string => {
+const getNameExt = (field: Field): string => {
 	switch (field.type) {
 		case FieldTypeEnum.Array:
 			return getNameExt((field.value as ArrayField).field_enum);
@@ -488,11 +447,6 @@ export type Class = {
 	class_id: number;
 	name: string;
 	serializer: SerializerN;
-};
-
-export type FieldInfo = {
-	decoder: Decoder;
-	propId: number;
 };
 
 export const constructorFieldHelper = {
@@ -612,83 +566,6 @@ export const constructorFieldHelper = {
 				return reader.ReadUBits(7);
 			default:
 				throw Error('unknown decoder');
-		}
-	},
-	getPropInfo: (field: Field, path: FieldPath): FieldInfo | null => {
-		// TODO MEMOIZE THE FIELD INFO
-		let info: null | FieldInfo = null;
-		switch (field.type) {
-			case FieldTypeEnum.Value: {
-				info = {
-					decoder: (field.value as ValueField).decoder,
-					propId: (field.value as ValueField).prop_id
-				};
-				break;
-			}
-			case FieldTypeEnum.Vector: {
-				const v = getInnerExt(field, 0);
-
-				switch (v.type) {
-					case FieldTypeEnum.Value: {
-						info = {
-							decoder: (v.value as ValueField).decoder,
-							propId: (v.value as ValueField).prop_id
-						};
-						break;
-					}
-				}
-				break;
-			}
-		}
-
-		if (!info) return null;
-
-		if (info.propId === MY_WEAPONS_OFFSET) {
-			if (path.last !== -1) {
-				info.propId = MY_WEAPONS_OFFSET + path.path[2] + 1;
-			}
-		}
-
-		if (info.propId === WEAPON_SKIN_ID) {
-			info.propId = WEAPON_SKIN_ID + path.path[1];
-		}
-
-		if (path.path[1] !== -1) {
-			if (info.propId >= ITEM_PURCHASE_COUNT && info.propId < ITEM_PURCHASE_COUNT + FLATTENED_VEC_MAX_LEN) {
-				info.propId = ITEM_PURCHASE_COUNT + path.path[2];
-			}
-			if (info.propId >= ITEM_PURCHASE_DEF_IDX && info.propId < ITEM_PURCHASE_DEF_IDX + FLATTENED_VEC_MAX_LEN) {
-				info.propId = ITEM_PURCHASE_DEF_IDX + path.path[2];
-			}
-			if (info.propId >= ITEM_PURCHASE_COST && info.propId < ITEM_PURCHASE_COST + FLATTENED_VEC_MAX_LEN) {
-				info.propId = ITEM_PURCHASE_COST + path.path[2];
-			}
-			if (info.propId >= ITEM_PURCHASE_HANDLE && info.propId < ITEM_PURCHASE_HANDLE + FLATTENED_VEC_MAX_LEN) {
-				info.propId = ITEM_PURCHASE_HANDLE + path.path[2];
-			}
-			if (
-				info.propId >= ITEM_PURCHASE_NEW_DEF_IDX &&
-				info.propId < ITEM_PURCHASE_NEW_DEF_IDX + FLATTENED_VEC_MAX_LEN
-			) {
-				info.propId = ITEM_PURCHASE_NEW_DEF_IDX + path.path[2];
-			}
-		}
-
-		return info;
-	},
-	getDecoderFromField: (field: Field) => {
-		switch (field.type) {
-			case FieldTypeEnum.Value: {
-				return (field.value as ValueField).decoder;
-			}
-			case FieldTypeEnum.Vector: {
-				return Decoders.UnsignedDecoder;
-			}
-			case FieldTypeEnum.Pointer: {
-				return (field.value as PointerField).decoder;
-			}
-			default:
-				throw 'WRONG TYPE FIELD XXS';
 		}
 	},
 	findDecoder: (field: ConstructorField): Decoder => {
