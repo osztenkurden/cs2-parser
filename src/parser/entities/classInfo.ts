@@ -123,7 +123,6 @@ export const parseClassInfo = (sendTables: CDemoSendTables, cDemoClassInfo: CDem
 			if (fieldType !== null) {
 				fieldsForThisSerializer[i] = fieldType.clone();
 			}
-
 		}
 
 		const serializerValue: SerializerN = {

@@ -3,12 +3,7 @@ import ByteBuffer from 'bytebuffer';
 import snappy from 'snappy';
 import { BitBuffer } from '../ubitreader.js';
 import { decoders, type DecoderKeys, type Decoders } from '../descriptors/decoders.js';
-import {
-	CDemoSendTables,
-	EDemoCommands,
-	type CDemoFullPacket,
-	type CDemoPacket
-} from '../../ts-proto/demo.js';
+import { CDemoSendTables, EDemoCommands, type CDemoFullPacket, type CDemoPacket } from '../../ts-proto/demo.js';
 import { EBaseGameEvents, type CMsgSource1LegacyGameEvent } from '../../ts-proto/gameevents.js';
 import { CSVCMsg_PacketEntities, SVC_Messages } from '../../ts-proto/netmessages.js';
 import { messages } from '../descriptors/index.js';
@@ -68,7 +63,12 @@ export class ParseSession {
 	}
 
 	/** Create a session that reads from a file in fixed-size chunks instead of loading the entire file into memory. */
-	static fromFile(filePath: string, entityMode: EntityMode, emitMainQueue: EmitQueue, parser?: DemoReader): ParseSession {
+	static fromFile(
+		filePath: string,
+		entityMode: EntityMode,
+		emitMainQueue: EmitQueue,
+		parser?: DemoReader
+	): ParseSession {
 		const fd = fs.openSync(filePath, 'r');
 		const fileSize = fs.fstatSync(fd).size;
 		const readBuffer = Buffer.alloc(ParseSession.READ_BUFFER_SIZE);
@@ -165,9 +165,7 @@ export class ParseSession {
 	}
 
 	private getProgress(): number {
-		return this.fd !== null
-			? this.fileOffset / this.fileSize
-			: this.bytebuffer.offset / this.bytebuffer.limit;
+		return this.fd !== null ? this.fileOffset / this.fileSize : this.bytebuffer.offset / this.bytebuffer.limit;
 	}
 
 	private closeFd(): void {
@@ -336,11 +334,7 @@ export class ParseSession {
 		return true;
 	}
 
-	private handleFrame(
-		decoder: (typeof decoders)[keyof typeof decoders],
-		size: number,
-		isCompressed: boolean
-	): void {
+	private handleFrame(decoder: (typeof decoders)[keyof typeof decoders], size: number, isCompressed: boolean): void {
 		switch (decoder.type) {
 			case EDemoCommands.DEM_SendTables:
 				this.sendTables = this.baseParse(decoder.decode, size, isCompressed) ?? null;

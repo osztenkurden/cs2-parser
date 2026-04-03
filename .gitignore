@@ -3,3 +3,5 @@ lib
 dist
 replay-generator/output
 *.tgz
+tests/fixtures/*.dem
+coverage/

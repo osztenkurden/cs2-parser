@@ -24,7 +24,7 @@ export type OutputEvents = {
 	svc_ClearAllStringTables: null;
 	svc_CreateStringTable: null | NonNullable<ReturnType<typeof createStringTable>>;
 	svc_ServerInfo: CSVCMsg_ServerInfo;
-	cancel: never,
+	cancel: never;
 	debug: string;
 	entityCreated: [entityId: number, classId: number, entityType: EntityTypeEnum, className: string];
 	entityUpdated: { entityId: number; value: any; propId: number };

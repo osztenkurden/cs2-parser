@@ -351,7 +351,7 @@ export class DemoReader extends TypedEventEmitter<OutputEvents> {
 		if (this._hasEnded) throw 'Demo has already been parsed';
 
 		this._hasEnded = true;
-		this._stream?.destroy(new Error("Stream canceled"));
+		this._stream?.destroy(new Error('Stream canceled'));
 		this._stream = null;
 		this.emit('cancel');
 		this.emit('end', { incomplete: true });

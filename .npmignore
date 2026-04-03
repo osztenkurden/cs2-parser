@@ -25,6 +25,16 @@ eslint.config.js
 .prettierrc
 bun.lock
 
+# Test & CI
+tests/
+.github/
+bunfig.toml
+commitlint.config.js
+.husky/
+coverage/
+.release-please-manifest.json
+release-please-config.json
+
 # Misc
 .claude/
 node_modules/
