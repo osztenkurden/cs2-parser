@@ -15,7 +15,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -35,7 +35,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: npm
@@ -47,7 +47,7 @@ jobs:
       # Cache demo fixtures to avoid repeated downloads
       - name: Cache test fixtures
         id: fixture-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: tests/fixtures/*.dem
           key: test-fixtures-v1
