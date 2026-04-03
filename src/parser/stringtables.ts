@@ -151,11 +151,11 @@ export const createStringTable = (
 	);
 };
 
-// TODO Readd update string table
+// TODO: Verify if this logic is sane
 
 export const updateStringTable = (
 	updateTableMessage: CSVCMsg_UpdateStringTable,
-	savedTables: StringTableObject['table'][],
+	savedTables: (StringTableObject['table'] | null)[],
 	baselines: Uint8Array[]
 ) => {
 	const existing = savedTables[updateTableMessage.table_id!];

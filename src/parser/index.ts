@@ -3,7 +3,6 @@ import { EDemoCommands } from '../ts-proto/demo.js';
 import { decoders } from './descriptors/decoders.js';
 import { BitBuffer } from './ubitreader.js';
 import { GameEvents } from './descriptors/gameEventEmitter.js';
-import { type StringTableCreated } from './descriptors/index.js';
 import { CMsgPlayerInfo } from '../ts-proto/networkbasetypes.js';
 import { type Readable } from 'stream';
 import { EntityMode, type EmitQueue, type OutputEvents } from './entities/types.js';
@@ -20,7 +19,6 @@ export class DemoReader extends EventEmitter<{
 	[K in keyof OutputEvents]: OutputEvents[K] extends never ? [] : [OutputEvents[K]];
 }> {
 	_parseStartTime = 0n;
-	private _stringTables = [] as (StringTableCreated | null)[];
 	private _hasEnded = false;
 	private _stream: Readable | null = null;
 
@@ -127,13 +125,12 @@ export class DemoReader extends EventEmitter<{
 			this.currentTick = tick;
 		});
 		this.on('svc_CreateStringTable', table => {
-			if (!table) return this._stringTables.push(table);
+			if(!table) return;
 
 			for (const player of table.players) {
 				this._playerInfoMap[player.userid! & 255] = player;
 			}
 
-			this._stringTables.push(table.table);
 		});
 
 		this.on('entityCreated', ([entityId, classId, entityType, className]) => {

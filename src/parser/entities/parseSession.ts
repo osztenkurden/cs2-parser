@@ -7,7 +7,7 @@ import { CDemoSendTables, EDemoCommands, type CDemoFullPacket, type CDemoPacket 
 import { EBaseGameEvents, type CMsgSource1LegacyGameEvent } from '../../ts-proto/gameevents.js';
 import { CSVCMsg_PacketEntities, SVC_Messages } from '../../ts-proto/netmessages.js';
 import { messages } from '../descriptors/index.js';
-import { createStringTable } from '../stringtables.js';
+import { createStringTable, updateStringTable, type StringTableObject } from '../stringtables.js';
 import { EntityMode, type EmitQueue, type EventQueue, type emit } from './types.js';
 import { parseClassInfo } from './classInfo.js';
 import { EntityParser } from './entityParser.js';
@@ -52,6 +52,8 @@ export class ParseSession {
 	private readonly enqueueEvent: emit = (eventName, data) => {
 		this.eventQueue.push([eventName, data] as any);
 	};
+
+	private _stringTables: (StringTableObject["table"] | null)[] = [];
 
 	constructor(buffer: Buffer, entityMode: EntityMode, emitMainQueue: EmitQueue, parser?: DemoReader) {
 		this.bytebuffer = ByteBuffer.wrap(buffer, true);
@@ -437,11 +439,19 @@ export class ParseSession {
 				case SVC_Messages.svc_CreateStringTable: {
 					const msgContent = reader.readBytesToSlice(ParseSession.PACKET_TEMP_BUFFER, size);
 					const tableCreatedData = createStringTable(command.class.decode(msgContent), this.baselines);
+					this._stringTables.push(tableCreatedData?.table ?? null);
 					this.enqueueEvent('svc_CreateStringTable', tableCreatedData || null);
 					break;
 				}
 				case SVC_Messages.svc_UpdateStringTable: {
-					reader.skipBytesBetter(size);
+					const msgContent = reader.readBytesToSlice(ParseSession.PACKET_TEMP_BUFFER, size);
+					const updateMsg = command.class.decode(msgContent);
+					if("table_id" in updateMsg){
+						const tableCData = updateStringTable(updateMsg, this._stringTables, this.baselines);
+						if(tableCData){
+							this._stringTables.push(tableCData.table);
+						}
+					}
 					break;
 				}
 				case SVC_Messages.svc_ClearAllStringTables:
