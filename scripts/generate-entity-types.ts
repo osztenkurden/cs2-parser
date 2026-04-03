@@ -12,8 +12,8 @@ import { fileURLToPath } from 'url';
 
 // Import parsing internals
 import { DemoReader } from '../src/parser/index.js';
-import { EntityMode } from '../src/parser/workerParser/worker.js';
-import type { Decoder } from '../src/parser/workerParser/constructorFields.js';
+import { Decoder } from '../src/parser/entities/constructorFields.js';
+import { EntityMode } from '../src/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const OUTPUT_DIR = path.join(__dirname, '..', 'src', 'generated');
