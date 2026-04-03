@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/osztenkurden/cs2parser/compare/v1.0.0...v1.0.1) (2026-04-03)
+
+
+### Bug Fixes
+
+* publishing ([81c6ef1](https://github.com/osztenkurden/cs2parser/commit/81c6ef13b019c8ce8925753f26bdaa1807a19f82))
+
 ## 1.0.0 (2026-04-03)
 
 
