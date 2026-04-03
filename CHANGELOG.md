@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.2.0](https://github.com/osztenkurden/cs2parser/compare/v1.1.1...v1.2.0) (2026-04-03)
+
+
+### Features
+
+* added server info static method ([9f6f7ae](https://github.com/osztenkurden/cs2parser/commit/9f6f7aeda090b086adb3c1f45cb73836684f235c))
+* added user messages, commands, pawn reference ([90222ff](https://github.com/osztenkurden/cs2parser/commit/90222ffa9a4823fb1f4660b26b2149e502d27daf))
+
+
+### Bug Fixes
+
+* formatting ([ae0d504](https://github.com/osztenkurden/cs2parser/commit/ae0d504144067d99a0b1ef5758b3e5a5ced7ee5b))
+* memory & speed improvements ([bf6ac90](https://github.com/osztenkurden/cs2parser/commit/bf6ac902021ea3b9e8bcd3e3cabf07e67c82ac27))
+* type issue ([dd24ec9](https://github.com/osztenkurden/cs2parser/commit/dd24ec95d6e9311e34cb21afa4681ec40cd15da9))
+* unused update string table ([0f64421](https://github.com/osztenkurden/cs2parser/commit/0f64421b071e4aec1c50108b413fb9070ec4b3ee))
+
 ## [1.1.1](https://github.com/osztenkurden/cs2parser/compare/v1.1.0...v1.1.1) (2026-04-03)
 
 
