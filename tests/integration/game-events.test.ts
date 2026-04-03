@@ -12,10 +12,25 @@ describe.skipIf(!demoAvailable)('game events', () => {
 		gameEventNames = [];
 		const reader = new DemoReader();
 
-		reader.gameEvents.on('gameEvent', event_name => {
-			if (!gameEventNames.includes(event_name)) {
-				gameEventNames.push(event_name);
+		const cancelIfThree = () => {
+			if(gameEventNames.length >= 3){
+				reader.cancel();
 			}
+		}
+
+		reader.gameEvents.once("round_end", () => {
+			gameEventNames.push("round_end");
+			cancelIfThree();
+		});
+
+		reader.gameEvents.once("player_death", () => {
+			gameEventNames.push("player_death");
+			cancelIfThree();
+		});
+
+		reader.gameEvents.once("round_start", () => {
+			gameEventNames.push("round_start");
+			cancelIfThree();
 		});
 
 		await reader.parseDemo(demoPath, { entities: EntityMode.ALL });

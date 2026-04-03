@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'bun:test';
+import { describe, test, expect, beforeAll } from 'bun:test';
 import { DemoReader, EntityMode } from '../../src/index.js';
 import fs from 'fs';
 
@@ -6,41 +6,44 @@ const demoPath = process.env.CS2_DEMO_PATH ?? 'tests/fixtures/demo.dem';
 const demoAvailable = fs.existsSync(demoPath);
 
 describe.skipIf(!demoAvailable)('entity mode consistency', () => {
-	test('all entity modes produce the same tick count', async () => {
-		const modes = [EntityMode.NONE, EntityMode.ONLY_GAME_RULES, EntityMode.ALL] as const;
-		const ticks: number[] = [];
+	const results: Partial<Record<'NONE' | 'ONLY_GAME_RULES' | 'ALL', { tick: number; entities: number; players: number }>> =
+		{};
 
-		for (const mode of modes) {
+	beforeAll(async () => {
+		const modes = {
+			NONE: EntityMode.NONE,
+			ONLY_GAME_RULES: EntityMode.ONLY_GAME_RULES,
+			ALL: EntityMode.ALL
+		} as const;
+
+		for (const [name, mode] of Object.entries(modes)) {
 			const reader = new DemoReader();
 			await reader.parseDemo(demoPath, { entities: mode });
-			ticks.push(reader.currentTick);
+			results[name as keyof typeof results] = {
+				tick: reader.currentTick,
+				entities: reader.entities.filter(Boolean).length,
+				players: reader.players.length
+			};
 		}
-
-		// All modes should produce the same final tick
-		expect(ticks[0]).toBeGreaterThan(0);
-		expect(ticks[1]).toBe(ticks[0]);
-		expect(ticks[2]).toBe(ticks[0]);
 	});
 
-	test('NONE mode has no entities', async () => {
-		const reader = new DemoReader();
-		await reader.parseDemo(demoPath, { entities: EntityMode.NONE });
-		const entityCount = reader.entities.filter(Boolean).length;
-		expect(entityCount).toBe(0);
+	test('all entity modes produce the same tick count', () => {
+		expect(results.NONE?.tick ?? 0).toBeGreaterThan(0);
+		expect(results.ONLY_GAME_RULES?.tick).toBe(results.NONE?.tick ?? 0);
+		expect(results.ALL?.tick).toBe(results.NONE?.tick ?? 0);
 	});
 
-	test('ALL mode has entities', async () => {
-		const reader = new DemoReader();
-		await reader.parseDemo(demoPath, { entities: EntityMode.ALL });
-		const entityCount = reader.entities.filter(Boolean).length;
-		expect(entityCount).toBeGreaterThan(0);
+	test('NONE mode has no entities', () => {
+		expect(results.NONE?.entities).toBe(0);
 	});
 
-	test('players are available in all modes (from userinfo)', async () => {
-		for (const mode of [EntityMode.NONE, EntityMode.ONLY_GAME_RULES, EntityMode.ALL] as const) {
-			const reader = new DemoReader();
-			await reader.parseDemo(demoPath, { entities: mode });
-			expect(reader.players.length).toBeGreaterThan(0);
-		}
+	test('ALL mode has entities', () => {
+		expect(results.ALL?.entities).toBeGreaterThan(0);
+	});
+
+	test('players are available in all modes (from userinfo)', () => {
+		expect(results.NONE?.players).toBeGreaterThan(0);
+		expect(results.ONLY_GAME_RULES?.players).toBeGreaterThan(0);
+		expect(results.ALL?.players).toBeGreaterThan(0);
 	});
 });
