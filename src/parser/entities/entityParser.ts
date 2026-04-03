@@ -176,7 +176,7 @@ export class EntityParser {
 			if (last >= 2) {
 				target.path[2] = fp_src.path[2];
 				if (last >= 3) {
-					for (let i = 3; i <= last; i++) target.path[i] = fp_src.path[i];
+					for (let i = 3; i <= last; i++) target.path[i] = fp_src.path[i]!;
 				}
 			}
 		}
