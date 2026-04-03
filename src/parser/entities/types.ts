@@ -1,6 +1,12 @@
+import type { CSGOUserCmdPB } from '../../ts-proto/cs_usercmd.js';
 import type { CDemoFileHeader } from '../../ts-proto/demo.js';
 import type { CMsgSource1LegacyGameEventList, CMsgSource1LegacyGameEvent } from '../../ts-proto/gameevents.js';
-import type { CSVCMsg_ServerInfo, CSVCMsg_UserMessage } from '../../ts-proto/netmessages.js';
+import type {
+	CMsgServerUserCmd,
+	CSVCMsg_ServerInfo,
+	CSVCMsg_UserCommands,
+	CSVCMsg_UserMessage
+} from '../../ts-proto/netmessages.js';
 import type { createStringTable } from '../stringtables.js';
 import type { EntityTypeEnum } from './entityParser.js';
 
@@ -30,6 +36,7 @@ export type OutputEvents = {
 	entityUpdated: { entityId: number; value: any; propId: number };
 	entityDeleted: number;
 	svc_UserMessage: CSVCMsg_UserMessage;
+	usercommand: Omit<CMsgServerUserCmd, 'data'> & { data: CSGOUserCmdPB };
 };
 
 export type emit = <T extends keyof OutputEvents>(eventName: T, data: OutputEvents[T]) => void;

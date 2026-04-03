@@ -13,6 +13,13 @@ import { EntityParser } from './entityParser.js';
 import type { DemoReader } from '../index.js';
 import { BinaryReaderEditable } from '../../binary-encoding/index.js';
 import { createAllocator } from './allocator.js';
+import { CSGOUserCmdPB } from '../../ts-proto/cs_usercmd.js';
+
+export interface ParseSettings {
+	commands?: boolean;
+	messages?: boolean;
+	// voice?: boolean
+}
 
 export class ParseSession {
 	// Module-level singletons (shared across sessions)
@@ -50,6 +57,8 @@ export class ParseSession {
 	private readonly parser: DemoReader | null;
 	private readonly emitMainQueue: EmitQueue;
 
+	private readonly settings: ParseSettings | undefined;
+
 	// Bound reference for EntityParser (avoids .bind() on every call)
 	private readonly enqueueEvent: emit = (eventName, data) => {
 		this.eventQueue.push([eventName, data] as any);
@@ -57,13 +66,20 @@ export class ParseSession {
 
 	private _stringTables: (StringTableObject['table'] | null)[] = [];
 
-	constructor(buffer: Buffer | Uint8Array, entityMode: EntityMode, emitMainQueue: EmitQueue, parser?: DemoReader) {
+	constructor(
+		buffer: Buffer | Uint8Array,
+		entityMode: EntityMode,
+		emitMainQueue: EmitQueue,
+		parser?: DemoReader,
+		settings?: ParseSettings
+	) {
 		this._frameBuf = buffer;
 		this._frameOffset = 16; // skip demo file header
 		this._frameLimit = buffer.length;
 		this.entityMode = entityMode;
 		this.parser = parser ?? null;
 		this.emitMainQueue = emitMainQueue;
+		this.settings = settings;
 	}
 
 	/** Create a session that reads from a file in fixed-size chunks instead of loading the entire file into memory. */
@@ -71,7 +87,8 @@ export class ParseSession {
 		filePath: string,
 		entityMode: EntityMode,
 		emitMainQueue: EmitQueue,
-		parser?: DemoReader
+		parser?: DemoReader,
+		opts?: ParseSettings
 	): ParseSession {
 		const fd = fs.openSync(filePath, 'r');
 		const fileSize = fs.fstatSync(fd).size;
@@ -79,7 +96,7 @@ export class ParseSession {
 		const initialRead = Math.min(readBuffer.length, fileSize);
 		fs.readSync(fd, readBuffer, 0, initialRead, 0);
 
-		const session = new ParseSession(readBuffer.subarray(0, initialRead), entityMode, emitMainQueue, parser);
+		const session = new ParseSession(readBuffer.subarray(0, initialRead), entityMode, emitMainQueue, parser, opts);
 		session.fd = fd;
 		session.readBuffer = readBuffer;
 		session.fileOffset = initialRead;
@@ -483,6 +500,34 @@ export class ParseSession {
 					reader.skipBytesBetter(size);
 					this.enqueueEvent('svc_ClearAllStringTables', null);
 					break;
+				case SVC_Messages.svc_UserMessage: {
+					if (!this.settings?.messages) {
+						reader.skipBytesBetter(size);
+						break;
+					}
+					const msgContent = reader.readBytesToSlice(ParseSession.PACKET_TEMP_BUFFER, size);
+					const msg = command.class.decode(msgContent);
+					this.enqueueEvent('svc_UserMessage', msg);
+					break;
+				}
+				case SVC_Messages.svc_UserCmds: {
+					if (!this.settings?.commands) {
+						reader.skipBytesBetter(size);
+						break;
+					}
+					const msgContent = reader.readBytesToSlice(ParseSession.PACKET_TEMP_BUFFER, size);
+					const msg = command.class.decode(msgContent);
+					for (const command of msg.commands) {
+						if (!command.data) continue;
+						const msg = CSGOUserCmdPB.decode(command.data);
+
+						this.enqueueEvent('usercommand', {
+							...command,
+							data: msg
+						});
+					}
+					break;
+				}
 				default:
 					reader.skipBytesBetter(size);
 					break;

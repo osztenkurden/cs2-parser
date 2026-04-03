@@ -1,5 +1,6 @@
 import type { DemoReader } from '../parser/index.js';
 import type { ICCSPlayerPawn } from '../generated/entityTypes.js';
+import type { Player } from './player.js';
 
 const CELL_BITS = 9;
 const MAX_COORD = 1 << 14;
@@ -89,6 +90,10 @@ export class PlayerPawn {
 
 	get flags(): number {
 		return (this._prop('CCSPlayerPawn.m_fFlags') ?? 0) as number;
+	}
+
+	get controller(): Player | undefined {
+		return this._parser.playerControllers.find(player => player.pawnEntityId === this.entityId);
 	}
 
 	get ownerEntityHandle(): number {

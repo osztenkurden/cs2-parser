@@ -87,6 +87,18 @@ parser.parseDemo(buffer, { entities: EntityMode.ALL });
 | `Readable` stream | `Promise<void>` | low |
 | `Buffer` | `Promise<void>` | high |
 
+### Parse Settings
+
+Additional options can be passed to `parseDemo` to enable extra data:
+
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `messages` | `boolean` | `false` | Emit `svc_UserMessage` events |
+| `commands` | `boolean` | `false` | Emit `usercommand` events (decoded `CSGOUserCmdPB`) |
+
+```ts
+await parser.parseDemo('demo.dem', { entities: EntityMode.ALL, commands: true, messages: true });
+```
 
 ## Players
 
@@ -134,6 +146,18 @@ The `Player` class wraps a `CCSPlayerController` entity. It links to the player'
 | `hasDefuser` / `hasHelmet` / `isScoped` | `boolean` | Pawn |
 | `pawn` | `PlayerPawn \| null` | Linked pawn entity |
 | `team` | `Team \| null` | Linked team entity |
+
+### PlayerPawn Helper
+
+`parser.getPawn(entityId)` returns a `PlayerPawn` helper for a `CCSPlayerPawn` entity. The `controller` property navigates back to the owning `Player`.
+
+| Property | Type |
+| --- | --- |
+| `health` / `armor` | `number` |
+| `position` | `Vector \| null` |
+| `eyeAngles` | `{pitch, yaw}` |
+| `hasDefuser` / `hasHelmet` / `isScoped` | `boolean` |
+| `controller` | `Player \| undefined` |
 
 ## Teams
 
@@ -223,6 +247,8 @@ parser.on('header', header => { });
 parser.on('end', ({ incomplete, error }) => { });
 parser.on('progress', fraction => { });
 parser.on('svc_ServerInfo', info => { });
+parser.on('svc_UserMessage', msg => { });  // requires { messages: true }
+parser.on('usercommand', cmd => { });      // requires { commands: true }
 ```
 
 ## Type Generation
