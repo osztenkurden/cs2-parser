@@ -309,6 +309,10 @@ Demo: `demo.dem` (318 MB, 136,812 ticks)
 | `parseDemo(buffer)` | 119.2 MB/s | 2.7s | 488MB | 702MB |
 | `parseDemo(stream)` | 122.8 MB/s | 2.6s | 137MB | 15MB |
 
+## Examples
+
+The [`examples/`](examples/) directory contains runnable scripts covering header parsing, server info extraction, full demo parsing with all input modes, and low-level packet events. See [`examples/README.md`](examples/README.md) for details.
+
 ## Acknowledgements
 
 Creating this library wouldn't be possible without awesome work of:
