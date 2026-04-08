@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/osztenkurden/cs2parser/compare/v1.3.0...v1.4.0) (2026-04-08)
+
+
+### Features
+
+* added getAccountById ([e45e5b0](https://github.com/osztenkurden/cs2parser/commit/e45e5b0f8008474c6839109389bdc19a84659bd3))
+* added rank events and caching of teams / players, to allow for object comparison, ([94f8084](https://github.com/osztenkurden/cs2parser/commit/94f80844e7aa5f845edb37b288e3871c1276a143))
+
 ## [1.3.0](https://github.com/osztenkurden/cs2parser/compare/v1.2.0...v1.3.0) (2026-04-08)
 
 
