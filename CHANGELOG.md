@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.3.0](https://github.com/osztenkurden/cs2parser/compare/v1.2.0...v1.3.0) (2026-04-08)
+
+
+### Features
+
+* added header property ([fbd67af](https://github.com/osztenkurden/cs2parser/commit/fbd67aff285f6709082ca2fea164e5dd1a3085a5))
+* added tick interval ([c70ec88](https://github.com/osztenkurden/cs2parser/commit/c70ec88d2b0d8011195f75a49be2a4169285985d))
+* allow for fetching player entity from cmsgplayerinfo ([e16cc5b](https://github.com/osztenkurden/cs2parser/commit/e16cc5b4fa25f5e6657f306e51143225084cd356))
+* move examples into specific directory, improve event handling, added data optional handlers ([6a152c7](https://github.com/osztenkurden/cs2parser/commit/6a152c7a67eb6fdaefcf78371536d87f69d1db18))
+
+
+### Bug Fixes
+
+* fixed string tables not being properly updated ([2019b6e](https://github.com/osztenkurden/cs2parser/commit/2019b6e11233073b3827aa6e2431fd3c8fa655af))
+
 ## [1.2.0](https://github.com/osztenkurden/cs2parser/compare/v1.1.1...v1.2.0) (2026-04-03)
 
 
