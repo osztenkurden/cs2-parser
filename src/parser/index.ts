@@ -29,13 +29,16 @@ export class DemoReader extends EventEmitter<{
 
 	entities: TypedEntity[];
 	private _directWriteMode = false;
-
+	private tickInterval = NaN;
 	currentTick = -1;
 
 	private _playerInfoMap: Record<number, CMsgPlayerInfo> = {};
 
 	gameEvents = new GameEvents();
 
+	get currentTime(): number {
+		return this.currentTick * this.tickInterval;
+	}
 	/** All players from the userinfo string table. Available even with EntityMode.NONE. */
 	get players(): CMsgPlayerInfo[] {
 		return Object.values(this._playerInfoMap);
@@ -196,6 +199,11 @@ export class DemoReader extends EventEmitter<{
 		});
 		this.once('header', header => {
 			this.header = header;
+		});
+		this.once('serverinfo', serverInfo => {
+			if (serverInfo.tick_interval !== undefined) {
+				this.tickInterval = serverInfo.tick_interval;
+			}
 		});
 	}
 
