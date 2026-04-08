@@ -505,6 +505,7 @@ export class ParseSession {
 						const tableCData = updateStringTable(updateMsg, this._stringTables, this.baselines);
 						if (tableCData) {
 							this._stringTables.push(tableCData.table);
+							this.enqueueEvent('updatestringtable', tableCData);
 						}
 					}
 					break;

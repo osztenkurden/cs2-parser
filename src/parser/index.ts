@@ -173,6 +173,13 @@ export class DemoReader extends EventEmitter<{
 				this._playerInfoMap[player.userid! & 255] = player;
 			}
 		});
+		this.on('updatestringtable', update => {
+			if (!update) return;
+			for (const player of update.players) {
+				if (player.userid === undefined) continue;
+				this._playerInfoMap[player.userid & 255] = player;
+			}
+		});
 
 		this.on('entitycreated', ([entityId, classId, entityType, className]) => {
 			if (className === 'CCSGameRulesProxy') this._gameRulesEntityId = entityId;

@@ -2,7 +2,7 @@ import type { CDemoFileHeader } from '../../ts-proto/demo.js';
 import type { CMsgSource1LegacyGameEventList, CMsgSource1LegacyGameEvent } from '../../ts-proto/gameevents.js';
 import type { CSVCMsg_ServerInfo, MessageFns, SVC_Messages } from '../../ts-proto/netmessages.js';
 import type { optionalSvcMessages } from '../descriptors/svc.js';
-import type { createStringTable } from '../stringtables.js';
+import type { createStringTable, updateStringTable } from '../stringtables.js';
 import type { EntityTypeEnum } from './entityParser.js';
 
 export const EntityMode = {
@@ -45,6 +45,7 @@ export interface OutputEvents extends OnDemandEvents {
 	gameevent: CMsgSource1LegacyGameEvent;
 	clearallstringtables: never;
 	createstringtable: null | NonNullable<ReturnType<typeof createStringTable>>;
+	updatestringtable: NonNullable<ReturnType<typeof updateStringTable>>;
 	serverinfo: CSVCMsg_ServerInfo;
 	cancel: never;
 	debug: string;

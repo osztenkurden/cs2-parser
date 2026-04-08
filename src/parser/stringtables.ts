@@ -27,14 +27,9 @@ export const parseStringTable = (
 			idx += bitreader.ReadUVarInt32() + 1;
 		}
 
-		/*
-		  if (bitreader.readBoolean()) {
-			idx++;
-		  } else {
-			idx += bitreader.readUbitVar() + 1;
-		  }*/
-
+		// Does this entry have a key?
 		if (bitreader.readBoolean()) {
+			// Should we refer back to history?
 			if (bitreader.readBoolean()) {
 				const position = bitreader.ReadUBits(5);
 				const length = bitreader.ReadUBits(5);
@@ -53,62 +48,65 @@ export const parseStringTable = (
 			} else {
 				key += bitreader.readString();
 			}
-
-			if (keys.length >= 32) {
-				keys.shift();
-			}
-
-			keys.push(key);
-
-			if (bitreader.readBoolean()) {
-				let bits = 0;
-				let isCompressed = false;
-
-				if (udf) {
-					bits = userDataSize;
-				} else {
-					if ((flags & 0x1) !== 0) {
-						isCompressed = bitreader.readBoolean();
-					}
-					if (varintBitCount) {
-						bits = bitreader.readUbitVar() * 8;
-					} else {
-						bits = bitreader.ReadUBits(17) * 8;
-					}
-				}
-
-				value = Buffer.allocUnsafe(bits % 8 === 0 ? bits / 8 : 0);
-
-				bitreader.readBytes(value);
-
-				if (isCompressed && value?.length) {
-					value = snappy.uncompressSync(value) as Buffer;
-				}
-			} else {
-			}
-
-			if (name === 'userinfo' && value?.length) {
-				const data = CMsgPlayerInfo.decode(value!);
-				//players[data.userid! & 0xff] = data;
-				players.push(data);
-			}
-
-			if (name === 'instancebaseline' && value?.length) {
-				//this.baselines[key] = CMsgBasel;
-
-				if (key.includes(':')) {
-					// SHIT
-				} else {
-					const intKey = parseInt(key);
-
-					if (value) {
-						baselines[intKey] = value;
-					}
-				}
-			}
-
-			items.push({ idx, key, value });
 		}
+		// If no key bit, this is an update to an existing entry. We don't carry
+		// stateful entries across calls, so `key` stays empty here — for userinfo
+		// the slot is encoded inside CMsgPlayerInfo.userid so the key isn't needed.
+
+		// Track key in the 32-entry sliding history window. Always push (even when
+		// empty) so subsequent history references stay aligned with the wire format.
+		if (keys.length >= 32) {
+			keys.shift();
+		}
+		keys.push(key);
+
+		// Does this entry have a value? (UNCONDITIONAL — an entry may have a value
+		// without a key, and the bit stream MUST be advanced regardless of whether
+		// we plan to use the value.)
+		if (bitreader.readBoolean()) {
+			let bits = 0;
+			let isCompressed = false;
+
+			if (udf) {
+				bits = userDataSize;
+			} else {
+				if ((flags & 0x1) !== 0) {
+					isCompressed = bitreader.readBoolean();
+				}
+				if (varintBitCount) {
+					bits = bitreader.readUbitVar() * 8;
+				} else {
+					bits = bitreader.ReadUBits(17) * 8;
+				}
+			}
+
+			value = Buffer.allocUnsafe(bits % 8 === 0 ? bits / 8 : 0);
+
+			bitreader.readBytes(value);
+
+			if (isCompressed && value?.length) {
+				value = snappy.uncompressSync(value) as Buffer;
+			}
+		}
+
+		if (name === 'userinfo' && value?.length) {
+			const data = CMsgPlayerInfo.decode(value!);
+			players.push(data);
+		}
+
+		if (name === 'instancebaseline' && value?.length && key) {
+			if (key.includes(':')) {
+				// SHIT
+			} else {
+				const intKey = parseInt(key);
+
+				if (value) {
+					baselines[intKey] = value;
+				}
+			}
+		}
+
+		items.push({ idx, key, value });
 	}
 
 	return {
