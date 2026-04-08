@@ -12,7 +12,7 @@ import { Player } from '../helpers/player.js';
 import snappy from 'snappy';
 import { Team } from '../helpers/team.js';
 import { GameRules } from '../helpers/gameRules.js';
-import type { TypedEntity, EntityProperties, KnownClassName } from '../generated/entityTypes.js';
+import type { TypedEntity, EntityProperties, KnownClassName, ICCSPlayerController } from '../generated/entityTypes.js';
 import { isEntityClass } from '../generated/entityTypes.js';
 import EventEmitter from 'events';
 import { PlayerPawn } from '../helpers/playerPawn.js';
@@ -73,6 +73,31 @@ export class DemoReader extends EventEmitter<{
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * Get a Player helper for a given CMsgPlayerInfo (e.g. an element from `parser.players`).
+	 * Matches by steamid against CCSPlayerController.m_steamID. Requires EntityMode.ALL.
+	 *
+	 * Returns null if:
+	 *   - info is null/undefined or has no steamid
+	 *   - info is a bot (steamid === '0') — bots share steamid '0' and cannot be uniquely matched
+	 *   - the player has not yet been assigned a controller entity
+	 *   - the player has disconnected and the controller has been removed
+	 */
+	getPlayerByInfo(info: CMsgPlayerInfo | null | undefined): Player | null {
+		if (!info || info.steamid === undefined) return null;
+		const target = String(info.steamid);
+		if (target === '0') return null; // bots share steamid '0' — ambiguous
+		for (let i = 0; i < this.entities.length; i++) {
+			const e = this.entities[i];
+			if (!e || e.className !== 'CCSPlayerController') continue;
+			const raw = (e.properties as Partial<ICCSPlayerController>)['CCSPlayerController.m_steamID'];
+			if (raw !== undefined && String(raw) === target) {
+				return new Player(this, i);
+			}
+		}
+		return null;
 	}
 
 	/** All team entities as Team helper objects */
