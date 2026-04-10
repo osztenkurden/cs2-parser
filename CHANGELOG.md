@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/osztenkurden/cs2parser/compare/v1.4.1...v1.4.2) (2026-04-10)
+
+
+### Bug Fixes
+
+* added all win round reason enums ([d0304ea](https://github.com/osztenkurden/cs2parser/commit/d0304ea161a6ba30c2bb4152ab9fbf54d1b6670f))
+
 ## [1.4.1](https://github.com/osztenkurden/cs2parser/compare/v1.4.0...v1.4.1) (2026-04-10)
 
 
