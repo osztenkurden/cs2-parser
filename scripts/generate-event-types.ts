@@ -52,7 +52,7 @@ const reader = new DemoReader();
 let listOfEvents = '';
 let interfaceContent = '';
 
-reader.on('GE_Source1LegacyGameEventList', () => {
+reader.on('gameeventlist', () => {
 	for (const descriptor of Object.values(reader.gameEvents._eventDescriptors)) {
 		if (!descriptor.name) continue;
 
