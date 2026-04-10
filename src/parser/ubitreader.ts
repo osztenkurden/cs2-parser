@@ -10,6 +10,8 @@ for (let i = 1; i < 32; ++i) {
 MASK[32] = 0xffffffff;
 export class BitBuffer {
 	private static readonly BitMask = bitMask;
+	private static readonly _stringDecoder = new TextDecoder('utf-8');
+	private static readonly _stringScratch = new Uint8Array(4096);
 	public _bitsAvail = 0;
 	public _buf = 0;
 	private _pointer: Uint8Array;
@@ -44,12 +46,16 @@ export class BitBuffer {
 	}
 
 	public readString() {
-		let s = '';
+		const scratch = BitBuffer._stringScratch;
+		const maxLen = scratch.length;
+		let len = 0;
 		let c: number;
 		while ((c = this.ReadByte()) !== 0) {
-			s += String.fromCharCode(c);
+			if (len < maxLen) scratch[len] = c;
+			len++;
 		}
-		return s;
+		if (len === 0) return '';
+		return BitBuffer._stringDecoder.decode(scratch.subarray(0, Math.min(len, maxLen)));
 	}
 
 	public get RemainingBytes() {

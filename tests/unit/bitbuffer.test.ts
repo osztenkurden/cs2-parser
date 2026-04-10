@@ -142,6 +142,27 @@ describe('BitBuffer', () => {
 			const bb = makeBuf(0x00);
 			expect(bb.readString()).toBe('');
 		});
+
+		test('reads UTF-8 4-byte sequences (emoji)', () => {
+			const str = '_🆅🅸🅺_';
+			const encoded = new TextEncoder().encode(str);
+			const bb = makeBuf(...encoded, 0x00);
+			expect(bb.readString()).toBe(str);
+		});
+
+		test('reads UTF-8 2-byte sequences (Latin accents)', () => {
+			const str = 'café naïve';
+			const encoded = new TextEncoder().encode(str);
+			const bb = makeBuf(...encoded, 0x00);
+			expect(bb.readString()).toBe(str);
+		});
+
+		test('reads UTF-8 3-byte sequences (Cyrillic)', () => {
+			const str = 'Привет';
+			const encoded = new TextEncoder().encode(str);
+			const bb = makeBuf(...encoded, 0x00);
+			expect(bb.readString()).toBe(str);
+		});
 	});
 
 	describe('readBytes', () => {
