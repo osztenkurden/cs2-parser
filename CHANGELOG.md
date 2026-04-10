@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1](https://github.com/osztenkurden/cs2parser/compare/v1.4.0...v1.4.1) (2026-04-10)
+
+
+### Bug Fixes
+
+* fixed decoding non-ascii characters on entity properties ([266a416](https://github.com/osztenkurden/cs2parser/commit/266a41699ce487dc24092cefdde087f593bff608))
+* removed redundant interface ([b9ada9a](https://github.com/osztenkurden/cs2parser/commit/b9ada9a620d3227d7223f7ba2108895130d6e43b))
+* types ([e6fee83](https://github.com/osztenkurden/cs2parser/commit/e6fee83a2537a951f97a8d5fbc08889ce30cbf53))
+
 ## [1.4.0](https://github.com/osztenkurden/cs2parser/compare/v1.3.0...v1.4.0) (2026-04-08)
 
 
