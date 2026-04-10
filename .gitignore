@@ -5,3 +5,5 @@ replay-generator/output
 *.tgz
 tests/fixtures/*.dem
 coverage/
+comparison
+*.dem

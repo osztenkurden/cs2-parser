@@ -38,7 +38,7 @@ export class DemoReader extends EventEmitter<{
 	private tickInterval = NaN;
 	currentTick = -1;
 
-	private _playerInfoMap: Record<number, CMsgPlayerInfo> = {};
+	private _playerInfoMap: CMsgPlayerInfo[] = [];
 
 	private _playerCache: Map<number, Player> = new Map();
 	private _teamCache: Map<number, Team> = new Map();
@@ -52,12 +52,7 @@ export class DemoReader extends EventEmitter<{
 		return this.currentTick * this.tickInterval;
 	}
 	/** All players from the userinfo string table. Available even with EntityMode.NONE. */
-	get players(): CMsgPlayerInfo[] {
-		return Object.values(this._playerInfoMap);
-	}
-
-	/** Player info map keyed by userid & 0xFF. */
-	get playerInfoMap(): Record<number, CMsgPlayerInfo> {
+	get players() {
 		return this._playerInfoMap;
 	}
 

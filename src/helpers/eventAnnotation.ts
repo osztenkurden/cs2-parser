@@ -31,7 +31,7 @@ function resolvePlayerByUserSlot(parser: DemoReader, userSlot: number): Player |
 
 	const slot = userSlot & 0xff;
 	if (slot === 0xff) return null; // 0xFF = no player
-	const info = parser.playerInfoMap[slot];
+	const info = parser.players[slot];
 	if (!info) return null;
 
 	// Match to a controller entity by steamid

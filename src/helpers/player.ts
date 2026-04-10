@@ -40,7 +40,7 @@ export class Player {
 	}
 
 	get userInfo(): CMsgPlayerInfo | null {
-		for (const [, info] of Object.entries(this._parser.playerInfoMap)) {
+		for (const info of this._parser.players) {
 			if (info && String(info.steamid) === this.steamId) return info;
 		}
 		return null;
