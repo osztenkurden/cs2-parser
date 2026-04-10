@@ -408,19 +408,34 @@ if (rules) {
 import { WinRoundReason } from 'cs2parser';
 
 parser.gameEvents.on('round_end', event => {
-  if (event.reason === WinRoundReason.DEFUSE) console.log('CTs defused the bomb');
+  if (event.reason === WinRoundReason.BOMB_DEFUSED) console.log('CTs defused the bomb');
 });
 ```
 
 | Name | Value |
 | --- | --- |
-| `EXPLOSION` | `1` |
-| `DEFUSE` | `7` |
+| `INVALID` | `-1` |
+| `STILL_IN_PROGRESS` | `0` |
+| `TARGET_BOMBED` | `1` |
+| `VIP_ESCAPED` | `2` |
+| `VIP_ASSASSINATED` | `3` |
+| `T_ESCAPED` | `4` |
+| `CT_PREVENT_ESCAPE` | `5` |
+| `ESCAPING_T_NEUTRALIZED` | `6` |
+| `BOMB_DEFUSED` | `7` |
 | `T_ELIMINATED` | `8` |
 | `CT_ELIMINATED` | `9` |
-| `TIME` | `12` |
+| `ROUND_DRAW` | `10` |
+| `ALL_HOSTAGES_RESCUED` | `11` |
+| `TARGET_SAVED` | `12` |
+| `HOSTAGES_NOT_SAVED` | `13` |
+| `T_NOT_ESCAPED` | `14` |
+| `VIP_NOT_ESCAPED` | `15` |
+| `GAME_COMMENCING` | `16` |
 | `T_SURRENDER` | `17` |
 | `CT_SURRENDER` | `18` |
+| `T_PLANTED` | `19` |
+| `CT_REACHED_HOSTAGE` | `20` |
 
 ## Game Events
 
