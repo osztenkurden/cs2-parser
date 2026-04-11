@@ -4,9 +4,9 @@ import type { Player } from './player.js';
 
 export const TeamNumber = {
 	Unassigned: 0,
-	Spectator: 1,
-	Terrorist: 2,
-	CounterTerrorist: 3
+	Spectators: 1,
+	Terrorists: 2,
+	CounterTerrorists: 3
 } as const;
 
 export type TeamNumber = (typeof TeamNumber)[keyof typeof TeamNumber];

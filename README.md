@@ -357,9 +357,9 @@ for (const team of parser.teams) {
 
 ```ts
 TeamNumber.Unassigned        // 0
-TeamNumber.Spectator         // 1
-TeamNumber.Terrorist         // 2
-TeamNumber.CounterTerrorist  // 3
+TeamNumber.Spectators         // 1
+TeamNumber.Terrorists         // 2
+TeamNumber.CounterTerrorists  // 3
 ```
 
 | Property | Type |
