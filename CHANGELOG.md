@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/osztenkurden/cs2parser/compare/v1.4.2...v1.4.3) (2026-04-11)
+
+
+### Bug Fixes
+
+* typo in TeamNumber enums ([#14](https://github.com/osztenkurden/cs2parser/issues/14)) ([d485bf5](https://github.com/osztenkurden/cs2parser/commit/d485bf585a6697e00b6d1f781ce321426a4e1d3a))
+
 ## [1.4.2](https://github.com/osztenkurden/cs2parser/compare/v1.4.1...v1.4.2) (2026-04-10)
 
 
